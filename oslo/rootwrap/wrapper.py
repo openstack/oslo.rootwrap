@@ -23,7 +23,7 @@ import string
 
 from six import moves
 
-from openstack.common.rootwrap import filters
+from oslo.rootwrap import filters
 
 
 class NoFilterMatched(Exception):

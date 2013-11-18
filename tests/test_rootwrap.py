@@ -25,9 +25,9 @@ import mock
 from six import moves
 
 from openstack.common.fixture import moxstubout
-from openstack.common.rootwrap import cmd
-from openstack.common.rootwrap import filters
-from openstack.common.rootwrap import wrapper
+from oslo.rootwrap import cmd
+from oslo.rootwrap import filters
+from oslo.rootwrap import wrapper
 from openstack.common import test
 
 

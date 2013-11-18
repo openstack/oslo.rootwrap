@@ -86,7 +86,7 @@ def main():
     if os.path.exists(os.path.join(possible_topdir, "oslo", "__init__.py")):
         sys.path.insert(0, possible_topdir)
 
-    from openstack.common.rootwrap import wrapper
+    from oslo.rootwrap import wrapper
 
     # Load configuration
     try:
