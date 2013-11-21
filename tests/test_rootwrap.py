@@ -18,24 +18,22 @@ import logging
 import logging.handlers
 import os
 import subprocess
+import testtools
 import uuid
 
 import fixtures
 import mock
 from six import moves
 
-from openstack.common.fixture import moxstubout
 from oslo.rootwrap import cmd
 from oslo.rootwrap import filters
 from oslo.rootwrap import wrapper
-from openstack.common import test
 
 
-class RootwrapTestCase(test.BaseTestCase):
+class RootwrapTestCase(testtools.TestCase):
 
     def setUp(self):
         super(RootwrapTestCase, self).setUp()
-        self.stubs = self.useFixture(moxstubout.MoxStubout()).stubs
         self.filters = [
             filters.RegExpFilter("/bin/ls", "root", 'ls', '/[a-z]+'),
             filters.CommandFilter("/usr/bin/foo_bar_not_exist", "root"),
@@ -225,27 +223,20 @@ class RootwrapTestCase(test.BaseTestCase):
 
     def test_KillFilter_deleted_exe(self):
         """Makes sure deleted exe's are killed correctly."""
-        # See bug #967931.
-        def fake_readlink(blah):
-            return '/bin/commandddddd (deleted)'
-
         f = filters.KillFilter("root", "/bin/commandddddd")
         usercmd = ['kill', 1234]
         # Providing no signal should work
-        self.stubs.Set(os, 'readlink', fake_readlink)
-        self.assertTrue(f.match(usercmd))
+        with mock.patch('os.readlink') as readlink:
+            readlink.return_value = '/bin/commandddddd (deleted)'
+            self.assertTrue(f.match(usercmd))
 
     def test_KillFilter_upgraded_exe(self):
         """Makes sure upgraded exe's are killed correctly."""
-        # See bug #1179793.
-        def fake_readlink(blah):
-            return '/bin/commandddddd\0\05190bfb2 (deleted)'
-
         f = filters.KillFilter("root", "/bin/commandddddd")
         usercmd = ['kill', 1234]
-
-        self.stubs.Set(os, 'readlink', fake_readlink)
-        self.assertTrue(f.match(usercmd))
+        with mock.patch('os.readlink') as readlink:
+            readlink.return_value = '/bin/commandddddd\0\05190bfb2 (deleted)'
+            self.assertTrue(f.match(usercmd))
 
     def test_ReadFileFilter(self):
         goodfn = '/good/file.name'
@@ -403,7 +394,7 @@ class RootwrapTestCase(test.BaseTestCase):
                 self.assertEqual(os_getenv.call_count, 3)
 
 
-class PathFilterTestCase(test.BaseTestCase):
+class PathFilterTestCase(testtools.TestCase):
     def setUp(self):
         super(PathFilterTestCase, self).setUp()
 
