@@ -17,7 +17,7 @@ OpenStack services generally run under a specific, unprivileged user. However,
 sometimes they need to run a command as `root`. Instead of just calling
 `sudo make me a sandwich` and have a blanket `sudoers` permission to always
 escalate rights from their unprivileged users to `root`, those services can
-call `sudo oslo-rootwrap /etc/oslo/rootwrap.conf make me a sandwich`.
+call `sudo oslo-rootwrap /etc/oslo.rootwrap/rootwrap.conf make me a sandwich`.
 
 A sudoers entry lets the unprivileged user run `oslo-rootwrap` as `root`.
 `oslo-rootwrap` looks for filter definition directories in its configuration
@@ -51,7 +51,7 @@ root-owned `rootwrap.conf` configuration file and allowing any parameter
 after that. For example, Nova nodes should have this line in their `sudoers`
 file, to allow the `nova` user to call `sudo oslo-rootwrap`:
 
-``nova ALL = (root) NOPASSWD: /usr/bin/oslo-rootwrap /etc/oslo/rootwrap.conf *``
+``nova ALL = (root) NOPASSWD: /usr/bin/oslo-rootwrap /etc/oslo.rootwrap/rootwrap.conf *``
 
 Then the node also should ship the filter definitions corresponding to its
 usage of `oslo-rootwrap`. You should not install any other filters file on
@@ -59,9 +59,9 @@ that node, otherwise you would allow extra unneeded commands to be run as
 `root`.
 
 The filter file(s) corresponding to the node must be installed in one of the
-filters_path directories (preferably `/usr/share/oslo/rootwrap`). For example,
+filters_path directories (preferably `/usr/share/oslo.rootwrap`). For example,
 on Nova compute nodes, you should only have
-`/usr/share/oslo/rootwrap/compute.filters` installed. The file should be owned
+`/usr/share/oslo.rootwrap/compute.filters` installed. The file should be owned
 and writeable only by the `root` user.
 
 Rootwrap configuration
@@ -82,7 +82,7 @@ filters_path
     Comma-separated list of directories containing filter definition files.
     All directories listed must be owned and only writeable by `root`.
     Example:
-    ``filters_path=/etc/oslo/rootwrap.d,/usr/share/oslo/rootwrap``
+    ``filters_path=/etc/oslo.rootwrap/filters.d,/usr/share/oslo.rootwrap``
 
 exec_dirs
     Comma-separated list of directories to search executables in, in case
@@ -260,7 +260,7 @@ following parameters:
 
 ``run_as_root=True``
 
-``root_helper='sudo oslo-rootwrap /etc/oslo/rootwrap.conf``
+``root_helper='sudo oslo-rootwrap /etc/oslo.rootwrap/rootwrap.conf``
 
 NB: Some services ship with a `utils.execute()` convenience function that
 automatically sets `root_helper` based on the value of a `rootwrap_config`
