@@ -1,4 +1,4 @@
-# Configuration for oslo-rootwrap
+# Configuration for rootwrap
 # This file should be owned by (and only-writeable by) the root user
 
 [DEFAULT]

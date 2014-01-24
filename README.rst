@@ -5,10 +5,18 @@ Oslo Rootwrap
 The Oslo Rootwrap allows fine filtering of shell commands to run as `root`
 from OpenStack services.
 
-Unlike other Oslo deliverables, it should **not** be used as a Python library,
-but called as a separate process through the `oslo-rootwrap` command:
+Rootwrap should be used as a separate Python process calling the
+oslo.rootwrap.cmd:main function. You can set up a specific console_script
+calling into oslo.rootwrap.cmd:main, called for example `nova-rootwrap`.
+To keep things simple, this document will consider that your console_script
+is called `/usr/bin/nova-rootwrap`.
 
-`sudo oslo-rootwrap ROOTWRAP_CONFIG COMMAND_LINE`
+The rootwrap command line should be called under `sudo`. It's first parameter
+is the configuration file to use, and the remainder of the parameters are the
+command line to execute:
+
+`sudo nova-rootwrap ROOTWRAP_CONFIG COMMAND_LINE`
+
 
 How rootwrap works
 ==================
@@ -17,10 +25,10 @@ OpenStack services generally run under a specific, unprivileged user. However,
 sometimes they need to run a command as `root`. Instead of just calling
 `sudo make me a sandwich` and have a blanket `sudoers` permission to always
 escalate rights from their unprivileged users to `root`, those services can
-call `sudo oslo-rootwrap /etc/oslo-rootwrap/rootwrap.conf make me a sandwich`.
+call `sudo nova-rootwrap /etc/nova/rootwrap.conf make me a sandwich`.
 
-A sudoers entry lets the unprivileged user run `oslo-rootwrap` as `root`.
-`oslo-rootwrap` looks for filter definition directories in its configuration
+A sudoers entry lets the unprivileged user run `nova-rootwrap` as `root`.
+`nova-rootwrap` looks for filter definition directories in its configuration
 file, and loads command filters from them. Then it checks if the command
 requested by the OpenStack service matches one of those filters, in which
 case it executes the command (as `root`). If no filter matches, it denies
@@ -36,41 +44,40 @@ The escalation path is fully controlled by the `root` user. A `sudoers` entry
 rootwrap executable, and only with a specific configuration file (which should
 be owned by `root`) as its first parameter.
 
-`oslo-rootwrap` imports the Python modules it needs from a cleaned (and
+`nova-rootwrap` imports the Python modules it needs from a cleaned (and
 system-default) `PYTHONPATH`. The configuration file points to root-owned
 filter definition directories, which contain root-owned filters definition
 files. This chain ensures that the unprivileged user itself is never in
-control of the configuration or modules used by the `oslo-rootwrap` executable.
+control of the configuration or modules used by the `nova-rootwrap` executable.
 
 Installation
 ============
 
-All nodes wishing to run `oslo-rootwrap` should contain a `sudoers` entry that
-lets the unprivileged user run `oslo-rootwrap` as `root`, pointing to the
+All nodes wishing to run `nova-rootwrap` should contain a `sudoers` entry that
+lets the unprivileged user run `nova-rootwrap` as `root`, pointing to the
 root-owned `rootwrap.conf` configuration file and allowing any parameter
 after that. For example, Nova nodes should have this line in their `sudoers`
-file, to allow the `nova` user to call `sudo oslo-rootwrap`:
+file, to allow the `nova` user to call `sudo nova-rootwrap`:
 
-``nova ALL = (root) NOPASSWD: /usr/bin/oslo-rootwrap /etc/oslo-rootwrap/rootwrap.conf *``
+``nova ALL = (root) NOPASSWD: /usr/bin/nova-rootwrap /etc/nova/rootwrap.conf *``
 
 Then the node also should ship the filter definitions corresponding to its
-usage of `oslo-rootwrap`. You should not install any other filters file on
+usage of `nova-rootwrap`. You should not install any other filters file on
 that node, otherwise you would allow extra unneeded commands to be run as
 `root`.
 
 The filter file(s) corresponding to the node must be installed in one of the
-filters_path directories (preferably `/usr/share/oslo-rootwrap`). For example,
-on Nova compute nodes, you should only have
-`/usr/share/oslo-rootwrap/compute.filters` installed. The file should be owned
-and writeable only by the `root` user.
+filters_path directories. For example, on Nova compute nodes, you should only
+have `compute.filters` installed. The file should be owned and writeable only
+by the `root` user.
 
 Rootwrap configuration
 ======================
 
-The `rootwrap.conf` file is used to influence how `oslo-rootwrap` works. Since
+The `rootwrap.conf` file is used to influence how `nova-rootwrap` works. Since
 it's in the trusted security path, it needs to be owned and writeable only by
 the `root` user. Its location is specified in the `sudoers` entry, and must be
-provided on `oslo-rootwrap` command line as its first argument.
+provided on `nova-rootwrap` command line as its first argument.
 
 `rootwrap.conf` uses an *INI* file format with the following sections and
 parameters:
@@ -81,8 +88,9 @@ parameters:
 filters_path
     Comma-separated list of directories containing filter definition files.
     All directories listed must be owned and only writeable by `root`.
+    This is the only mandatory parameter.
     Example:
-    ``filters_path=/etc/oslo-rootwrap/filters.d,/usr/share/oslo-rootwrap``
+    ``filters_path=/etc/nova/rootwrap.d,/usr/share/nova/rootwrap``
 
 exec_dirs
     Comma-separated list of directories to search executables in, in case
@@ -109,7 +117,7 @@ syslog_log_level
 .filters files
 ==============
 
-Filters definition files contain lists of filters that `oslo-rootwrap` will
+Filters definition files contain lists of filters that `nova-rootwrap` will
 use to allow or deny a specific command. They are generally suffixed by
 `.filters`. Since they are in the trusted security path, they need to be
 owned and writeable only by the `root` user. Their location is specified
@@ -251,7 +259,7 @@ Example: allow to run `ip netns exec <namespace> <command>` as long as
 ``ip: IpNetnsExecFilter, ip, root``
 
 
-Calling oslo-rootwrap from OpenStack services
+Calling rootwrap from OpenStack services
 =============================================
 
 The `oslo.processutils` library ships with a convenience `execute()` function
@@ -260,7 +268,7 @@ following parameters:
 
 ``run_as_root=True``
 
-``root_helper='sudo oslo-rootwrap /etc/oslo-rootwrap/rootwrap.conf``
+``root_helper='sudo nova-rootwrap /etc/nova/rootwrap.conf``
 
 NB: Some services ship with a `utils.execute()` convenience function that
 automatically sets `root_helper` based on the value of a `rootwrap_config`
@@ -269,4 +277,4 @@ parameter, so only `run_as_root=True` needs to be set.
 If you want to call as `root` a previously-unauthorized command, you will also
 need to modify the filters (generally shipped in the source tree under
 `etc/rootwrap.d` so that the command you want to run as `root` will actually
-be allowed by `oslo-rootwrap`.
+be allowed by `nova-rootwrap`.
