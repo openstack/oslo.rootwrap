@@ -248,6 +248,17 @@ class RootwrapTestCase(testtools.TestCase):
     def test_IpFilter_non_netns(self):
         f = filters.IpFilter('/sbin/ip', 'root')
         self.assertTrue(f.match(['ip', 'link', 'list']))
+        self.assertTrue(f.match(['ip', '-s', 'link', 'list']))
+        self.assertTrue(f.match(['ip', '-s', '-v', 'netns', 'add']))
+        self.assertTrue(f.match(['ip', 'link', 'set', 'interface',
+                                 'netns', 'somens']))
+
+    def test_IpFilter_netns(self):
+        f = filters.IpFilter('/sbin/ip', 'root')
+        self.assertFalse(f.match(['ip', 'netns', 'exec', 'foo']))
+        self.assertFalse(f.match(['ip', 'netns', 'exec']))
+        self.assertFalse(f.match(['ip', '-s', 'netns', 'exec']))
+        self.assertFalse(f.match(['ip', '-l', '42', 'netns', 'exec']))
 
     def _test_IpFilter_netns_helper(self, action):
         f = filters.IpFilter('/sbin/ip', 'root')

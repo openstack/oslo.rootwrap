@@ -208,8 +208,10 @@ class IpFilter(CommandFilter):
 
     def match(self, userargs):
         if userargs[0] == 'ip':
-            if userargs[1] == 'netns':
-                return (userargs[2] in ('list', 'add', 'delete'))
+            # Avoid the 'netns exec' command here
+            for a, b in zip(userargs[1:], userargs[2:]):
+                if a == 'netns':
+                    return (b != 'exec')
             else:
                 return True
 
