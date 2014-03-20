@@ -16,4 +16,5 @@ coverage>=3.6
 mock>=1.0
 
 # rootwrap daemon's client should be verified to run in eventlet
-eventlet>=0.13.0
+# not available for Python 3.x
+# eventlet>=0.13.0
