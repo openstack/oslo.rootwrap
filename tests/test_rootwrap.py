@@ -16,12 +16,12 @@ import logging
 import logging.handlers
 import os
 import subprocess
-import testtools
 import uuid
 
 import fixtures
 import mock
 from six import moves
+import testtools
 
 from oslo.rootwrap import cmd
 from oslo.rootwrap import filters
