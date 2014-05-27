@@ -316,3 +316,32 @@ class IpNetnsExecFilter(ChainingFilter):
         if args:
             args[0] = os.path.basename(args[0])
         return args
+
+
+class ChainingRegExpFilter(ChainingFilter):
+    """Command filter doing regexp matching for prefix commands.
+    Remaining arguments are filtered again. This means that the command
+    specified as the arguments must be also allowed to execute directly.
+    """
+
+    def match(self, userargs):
+        # Early skip if number of args is smaller than the filter
+        if (not userargs or len(self.args) > len(userargs)):
+            return False
+        # Compare each arg (anchoring pattern explicitly at end of string)
+        for (pattern, arg) in zip(self.args, userargs):
+            try:
+                if not re.match(pattern + '$', arg):
+                    # DENY: Some arguments did not match
+                    return False
+            except re.error:
+                # DENY: Badly-formed filter
+                return False
+        # ALLOW: All arguments matched
+        return True
+
+    def exec_args(self, userargs):
+        args = userargs[len(self.args):]
+        if args:
+            args[0] = os.path.basename(args[0])
+        return args

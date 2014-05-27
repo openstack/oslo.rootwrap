@@ -263,6 +263,31 @@ Example: allow to run `ip netns exec <namespace> <command>` as long as
 
 ``ip: IpNetnsExecFilter, ip, root``
 
+ChainingRegExpFilter
+--------------------
+
+Filter that allows to run the prefix command, if the beginning of its arguments
+match to a list of regular expressions, and if remaining arguments are any
+otherwise-allowed command. Parameters are:
+
+1. Executable allowed
+2. User to run the command under
+3. (and following) Regular expressions to use to match first (and subsequent)
+   command arguments.
+
+This filter regards the length of the regular expressions list as the number of
+arguments to be checked, and remaining parts are checked by other filters.
+
+Example: allow to run `/usr/bin/nice`, but only with first two parameters being
+-n and integer, and followed by any allowed command by the other filters:
+
+``nice: /usr/bin/nice, root, nice, -n, -?\d+``
+
+Note: this filter can't be used to impose that the subcommand is always run
+under the prefix command. In particular, it can't enforce that a particular
+command is only run under "nice", since the subcommand can explicitly be
+called directly.
+
 
 Calling rootwrap from OpenStack services
 =============================================
