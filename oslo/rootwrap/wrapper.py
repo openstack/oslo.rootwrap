@@ -16,7 +16,6 @@
 import logging
 import logging.handlers
 import os
-import string
 
 from six import moves
 
@@ -117,7 +116,7 @@ def load_filters(filters_path):
             filterconfig = moves.configparser.RawConfigParser()
             filterconfig.read(os.path.join(filterdir, filterfile))
             for (name, value) in filterconfig.items("Filters"):
-                filterdefinition = [string.strip(s) for s in value.split(',')]
+                filterdefinition = [s.strip() for s in value.split(',')]
                 newfilter = build_filter(*filterdefinition)
                 if newfilter is None:
                     continue
