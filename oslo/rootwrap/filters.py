@@ -320,6 +320,7 @@ class IpNetnsExecFilter(ChainingFilter):
 
 class ChainingRegExpFilter(ChainingFilter):
     """Command filter doing regexp matching for prefix commands.
+
     Remaining arguments are filtered again. This means that the command
     specified as the arguments must be also allowed to execute directly.
     """
