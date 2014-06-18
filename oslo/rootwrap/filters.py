@@ -72,16 +72,13 @@ class RegExpFilter(CommandFilter):
         for (pattern, arg) in zip(self.args, userargs):
             try:
                 if not re.match(pattern + '$', arg):
-                    break
+                    # DENY: Some arguments did not match
+                    return False
             except re.error:
                 # DENY: Badly-formed filter
                 return False
-        else:
-            # ALLOW: All arguments matched
-            return True
-
-        # DENY: Some arguments did not match
-        return False
+        # ALLOW: All arguments matched
+        return True
 
 
 class PathFilter(CommandFilter):
