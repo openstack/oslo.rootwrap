@@ -316,6 +316,30 @@ class RootwrapTestCase(testtools.TestCase):
         self.assertRaises(wrapper.NoFilterMatched,
                           wrapper.match_filter, filter_list, args)
 
+    def test_ChainingRegExpFilter_match(self):
+        filter_list = [filters.ChainingRegExpFilter('nice', 'root',
+                                                    'nice', '-?\d+'),
+                       filters.CommandFilter('cat', 'root')]
+        args = ['nice', '5', 'cat', '/a']
+        dirs = ['/bin', '/usr/bin']
+
+        self.assertIsNotNone(wrapper.match_filter(filter_list, args, dirs))
+
+    def test_ChainingRegExpFilter_not_match(self):
+        filter_list = [filters.ChainingRegExpFilter('nice', 'root',
+                                                    'nice', '-?\d+'),
+                       filters.CommandFilter('cat', 'root')]
+        args_invalid = (['nice', '5', 'ls', '/a'],
+                        ['nice', '--5', 'cat', '/a'],
+                        ['nice2', '5', 'cat', '/a'],
+                        ['nice', 'cat', '/a'],
+                        ['nice', '5'])
+        dirs = ['/bin', '/usr/bin']
+
+        for args in args_invalid:
+            self.assertRaises(wrapper.NoFilterMatched,
+                              wrapper.match_filter, filter_list, args, dirs)
+
     def test_ReadFileFilter_empty_args(self):
         goodfn = '/good/file.name'
         f = filters.ReadFileFilter(goodfn)
