@@ -344,6 +344,18 @@ class RootwrapTestCase(testtools.TestCase):
             self.assertRaises(wrapper.NoFilterMatched,
                               wrapper.match_filter, filter_list, args, dirs)
 
+    def test_ChainingRegExpFilter_multiple(self):
+        filter_list = [filters.ChainingRegExpFilter('ionice', 'root', 'ionice',
+                                                    '-c[0-3]'),
+                       filters.ChainingRegExpFilter('ionice', 'root', 'ionice',
+                                                    '-c[0-3]', '-n[0-7]'),
+                       filters.CommandFilter('cat', 'root')]
+        # both filters match to ['ionice', '-c2'], but only the second accepts
+        args = ['ionice', '-c2', '-n7', 'cat', '/a']
+        dirs = ['/bin', '/usr/bin']
+
+        self.assertIsNotNone(wrapper.match_filter(filter_list, args, dirs))
+
     def test_ReadFileFilter_empty_args(self):
         goodfn = '/good/file.name'
         f = filters.ReadFileFilter(goodfn)
