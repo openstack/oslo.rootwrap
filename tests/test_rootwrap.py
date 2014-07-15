@@ -23,7 +23,6 @@ import mock
 from six import moves
 import testtools
 
-from oslo.rootwrap import cmd
 from oslo.rootwrap import filters
 from oslo.rootwrap import wrapper
 
@@ -437,7 +436,7 @@ class RootwrapTestCase(testtools.TestCase):
     def test_getlogin(self):
         with mock.patch('os.getlogin') as os_getlogin:
             os_getlogin.return_value = 'foo'
-            self.assertEqual(cmd._getlogin(), 'foo')
+            self.assertEqual(wrapper._getlogin(), 'foo')
 
     def test_getlogin_bad(self):
         with mock.patch('os.getenv') as os_getenv:
@@ -445,7 +444,7 @@ class RootwrapTestCase(testtools.TestCase):
                 os_getenv.side_effect = [None, None, 'bar']
                 os_getlogin.side_effect = OSError(
                     '[Errno 22] Invalid argument')
-                self.assertEqual(cmd._getlogin(), 'bar')
+                self.assertEqual(wrapper._getlogin(), 'bar')
                 os_getlogin.assert_called_once_with()
                 self.assertEqual(os_getenv.call_count, 3)
 

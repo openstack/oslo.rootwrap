@@ -33,10 +33,6 @@
 from __future__ import print_function
 
 import logging
-import os
-import pwd
-import signal
-import subprocess
 import sys
 
 from six import moves
@@ -49,26 +45,11 @@ RC_BADCONFIG = 97
 RC_NOEXECFOUND = 96
 
 
-def _subprocess_setup():
-    # Python installs a SIGPIPE handler by default. This is usually not what
-    # non-Python subprocesses expect.
-    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
-
-
 def _exit_error(execname, message, errorcode, log=True):
     print("%s: %s" % (execname, message), file=sys.stderr)
     if log:
         logging.error(message)
     sys.exit(errorcode)
-
-
-def _getlogin():
-    try:
-        return os.getlogin()
-    except OSError:
-        return (os.getenv('USER') or
-                os.getenv('USERNAME') or
-                os.getenv('LOGNAME'))
 
 
 def main():
@@ -97,27 +78,22 @@ def main():
                              config.syslog_log_facility,
                              config.syslog_log_level)
 
-    # Execute command if it matches any of the loaded filters
     filters = wrapper.load_filters(config.filters_path)
-    try:
-        filtermatch = wrapper.match_filter(filters, userargs,
-                                           exec_dirs=config.exec_dirs)
-        if filtermatch:
-            command = filtermatch.get_command(userargs,
-                                              exec_dirs=config.exec_dirs)
-            if config.use_syslog:
-                logging.info("(%s > %s) Executing %s (filter match = %s)" % (
-                    _getlogin(), pwd.getpwuid(os.getuid())[0],
-                    command, filtermatch.name))
+    run_one_command(execname, config, filters, userargs)
 
-            obj = subprocess.Popen(command,
-                                   stdin=sys.stdin,
-                                   stdout=sys.stdout,
-                                   stderr=sys.stderr,
-                                   preexec_fn=_subprocess_setup,
-                                   env=filtermatch.get_environment(userargs))
-            obj.wait()
-            sys.exit(obj.returncode)
+
+def run_one_command(execname, config, filters, userargs):
+    # Execute command if it matches any of the loaded filters
+    try:
+        obj = wrapper.start_subprocess(
+            filters, userargs,
+            exec_dirs=config.exec_dirs,
+            log=config.use_syslog,
+            stdin=sys.stdin,
+            stdout=sys.stdout,
+            stderr=sys.stderr)
+        obj.wait()
+        sys.exit(obj.returncode)
 
     except wrapper.FilterMatchNotExecutable as exc:
         msg = ("Executable not found: %s (filter match = %s)"
