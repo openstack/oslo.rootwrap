@@ -14,10 +14,10 @@
 #    under the License.
 
 import os
+import subprocess
 import sys
 
 import fixtures
-import subprocess
 import testtools
 from testtools import content
 
