@@ -41,6 +41,8 @@ import sys
 
 from six import moves
 
+from oslo.rootwrap import wrapper
+
 RC_UNAUTHORIZED = 99
 RC_NOCOMMAND = 98
 RC_BADCONFIG = 97
@@ -77,14 +79,6 @@ def main():
 
     configfile = sys.argv.pop(0)
     userargs = sys.argv[:]
-
-    # Add ../ to sys.path to allow running from branch
-    possible_topdir = os.path.normpath(os.path.join(os.path.abspath(execname),
-                                                    os.pardir, os.pardir))
-    if os.path.exists(os.path.join(possible_topdir, "oslo", "__init__.py")):
-        sys.path.insert(0, possible_topdir)
-
-    from oslo.rootwrap import wrapper
 
     # Load configuration
     try:
