@@ -37,6 +37,7 @@ import sys
 
 from six import moves
 
+from oslo.rootwrap import daemon as daemon_mod
 from oslo.rootwrap import wrapper
 
 RC_UNAUTHORIZED = 99
@@ -52,14 +53,23 @@ def _exit_error(execname, message, errorcode, log=True):
     sys.exit(errorcode)
 
 
-def main():
+def daemon():
+    return main(run_daemon=True)
+
+
+def main(run_daemon=False):
     # Split arguments, require at least a command
     execname = sys.argv.pop(0)
-    if len(sys.argv) < 2:
-        _exit_error(execname, "No command specified", RC_NOCOMMAND, log=False)
+    if run_daemon:
+        if len(sys.argv) != 1:
+            _exit_error(execname, "Extra arguments to daemon", RC_NOCOMMAND,
+                        log=False)
+    else:
+        if len(sys.argv) < 2:
+            _exit_error(execname, "No command specified", RC_NOCOMMAND,
+                        log=False)
 
     configfile = sys.argv.pop(0)
-    userargs = sys.argv[:]
 
     # Load configuration
     try:
@@ -79,7 +89,11 @@ def main():
                              config.syslog_log_level)
 
     filters = wrapper.load_filters(config.filters_path)
-    run_one_command(execname, config, filters, userargs)
+
+    if run_daemon:
+        daemon_mod.daemon_start(config, filters)
+    else:
+        run_one_command(execname, config, filters, sys.argv)
 
 
 def run_one_command(execname, config, filters, userargs):

@@ -7,8 +7,14 @@ testrepository>=0.0.17
 testscenarios>=0.4
 testtools>=0.9.32
 
+# when we can require tox>= 1.4, this can go into tox.ini:
+#  [testenv:cover]
+#  deps = {[testenv]deps} coverage
+coverage>=3.6
+
 # mocking framework
 mock>=1.0
 
 # rootwrap daemon's client should be verified to run in eventlet
-eventlet>=0.13.0
+# not available for Python 3.x
+# eventlet>=0.13.0

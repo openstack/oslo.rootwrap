@@ -190,7 +190,8 @@ def _getlogin():
                 os.getenv('LOGNAME'))
 
 
-def start_subprocess(filter_list, userargs, exec_dirs=[], log=False, **kwargs):
+def start_subprocess(filter_list, userargs, exec_dirs=[], log=False,
+                     env=None, **kwargs):
     filtermatch = match_filter(filter_list, userargs, exec_dirs)
 
     command = filtermatch.get_command(userargs, exec_dirs)
@@ -201,6 +202,6 @@ def start_subprocess(filter_list, userargs, exec_dirs=[], log=False, **kwargs):
 
     obj = subprocess.Popen(command,
                            preexec_fn=_subprocess_setup,
-                           env=filtermatch.get_environment(userargs),
+                           env=filtermatch.get_environment(userargs, env=env),
                            **kwargs)
     return obj

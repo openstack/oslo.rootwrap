@@ -57,9 +57,9 @@ class CommandFilter(object):
             return ['sudo', '-u', self.run_as, to_exec] + userargs[1:]
         return [to_exec] + userargs[1:]
 
-    def get_environment(self, userargs):
+    def get_environment(self, userargs, env=None):
         """Returns specific environment to set, None if none."""
-        return None
+        return env
 
 
 class RegExpFilter(CommandFilter):
@@ -277,8 +277,10 @@ class EnvFilter(CommandFilter):
         to_exec = self.get_exec(exec_dirs=exec_dirs) or self.exec_path
         return [to_exec] + self.exec_args(userargs)[1:]
 
-    def get_environment(self, userargs):
-        env = os.environ.copy()
+    def get_environment(self, userargs, env=None):
+        if env is None:
+            env = os.environ
+        env = env.copy()
 
         # ignore leading 'env'
         if userargs[0] == 'env':
