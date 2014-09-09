@@ -292,6 +292,9 @@ called directly.
 Calling rootwrap from OpenStack services
 =============================================
 
+Standalone mode (``sudo`` way)
+--------------------------
+
 The `oslo.processutils` library ships with a convenience `execute()` function
 that can be used to call shell commands as `root`, if you call it with the
 following parameters:
@@ -308,3 +311,35 @@ If you want to call as `root` a previously-unauthorized command, you will also
 need to modify the filters (generally shipped in the source tree under
 `etc/rootwrap.d` so that the command you want to run as `root` will actually
 be allowed by `nova-rootwrap`.
+
+Daemon mode
+-----------
+
+Since 1.3.0 version ``oslo.rootwrap`` supports "daemon mode". In this mode
+rootwrap would start, read config file and wait for commands to be run with
+root priviledges. All communications with the daemon should go through
+``Client`` class that resides in ``oslo.rootwrap.client`` module.
+
+Its constructor expects one argument - a list that can be passed to ``Popen``
+to create rootwrap daemon process. For ``root_helper`` above it will be
+``["sudo", "nova-rootwrap-daemon", "/etc/neutron/rootwrap.conf"]``,
+for example. Note that it uses a separate script that points to
+``oslo.rootwrap.cmd:daemon`` endpoint (instead of ``:main``).
+
+The class provides one method ``execute`` with following arguments:
+
+* ``userargs`` - list of command line arguments that are to be used to run the
+  command;
+* ``env`` - dict of environment variables to be set for it (by default it's an
+  empty dict, so all environment variables are stripped);
+* ``stdin`` - string to be passed to standard input of child process.
+
+The method returns 3-tuple containing:
+
+* return code of child process;
+* string containing everything captured from its stdout stream;
+* string containing everything captured from its stderr stream.
+
+The class lazily creates an instance of the daemon, connects to it and passes
+arguments. This daemon can die or be killed, ``Client`` will respawn it and/or
+reconnect to it as necessary.
