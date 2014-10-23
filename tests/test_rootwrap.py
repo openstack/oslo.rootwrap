@@ -23,6 +23,7 @@ import mock
 from six import moves
 import testtools
 
+from oslo.rootwrap import cmd
 from oslo.rootwrap import filters
 from oslo.rootwrap import wrapper
 
@@ -567,3 +568,18 @@ class PathFilterTestCase(testtools.TestCase):
                     os.path.realpath(self.TRAVERSAL_SYMLINK_WITHIN_DIR)]
 
         self.assertEqual(expected, self.f.get_command(args))
+
+
+class RunOneCommandTestCase(testtools.TestCase):
+    def _test_returncode_helper(self, returncode, expected):
+        with mock.patch.object(wrapper, 'start_subprocess') as mock_start:
+            with mock.patch('sys.exit') as mock_exit:
+                mock_start.return_value.wait.return_value = returncode
+                cmd.run_one_command(None, mock.Mock(), None, None)
+        mock_exit.assert_called_once_with(expected)
+
+    def test_positive_returncode(self):
+        self._test_returncode_helper(1, 1)
+
+    def test_negative_returncode(self):
+        self._test_returncode_helper(-1, 129)

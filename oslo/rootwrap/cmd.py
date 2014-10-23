@@ -44,6 +44,7 @@ RC_UNAUTHORIZED = 99
 RC_NOCOMMAND = 98
 RC_BADCONFIG = 97
 RC_NOEXECFOUND = 96
+SIGNAL_BASE = 128
 
 
 def _exit_error(execname, message, errorcode, log=True):
@@ -106,8 +107,11 @@ def run_one_command(execname, config, filters, userargs):
             stdin=sys.stdin,
             stdout=sys.stdout,
             stderr=sys.stderr)
-        obj.wait()
-        sys.exit(obj.returncode)
+        returncode = obj.wait()
+        # Fix returncode of Popen
+        if returncode < 0:
+            returncode = SIGNAL_BASE - returncode
+        sys.exit(returncode)
 
     except wrapper.FilterMatchNotExecutable as exc:
         msg = ("Executable not found: %s (filter match = %s)"
