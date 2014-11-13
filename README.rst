@@ -170,7 +170,7 @@ expressions to check all subsequent arguments. Parameters are:
 Example: allow to run `/usr/sbin/tunctl`, but only with three parameters with
 the first two being -b and -t:
 
-``tunctl: /usr/sbin/tunctl, root, tunctl, -b, -t, .*``
+``tunctl: RegExpFilter, /usr/sbin/tunctl, root, tunctl, -b, -t, .*``
 
 PathFilter
 ----------
@@ -281,7 +281,7 @@ arguments to be checked, and remaining parts are checked by other filters.
 Example: allow to run `/usr/bin/nice`, but only with first two parameters being
 -n and integer, and followed by any allowed command by the other filters:
 
-``nice: /usr/bin/nice, root, nice, -n, -?\d+``
+``nice: ChainingRegExpFilter, /usr/bin/nice, root, nice, -n, -?\d+``
 
 Note: this filter can't be used to impose that the subcommand is always run
 under the prefix command. In particular, it can't enforce that a particular
