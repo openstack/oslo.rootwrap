@@ -9,7 +9,7 @@ fixtures>=0.3.14
 python-subunit>=0.0.18
 testrepository>=0.0.18
 testscenarios>=0.4
-testtools>=0.9.36
+testtools>=0.9.36,!=1.2.0,!=1.4.0
 
 # this is required for the docs build jobs
 sphinx>=1.1.2,!=1.2.0,!=1.3b1,<1.3
