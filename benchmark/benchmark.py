@@ -22,7 +22,7 @@ import subprocess
 import sys
 import timeit
 
-from oslo.rootwrap import client
+from oslo_rootwrap import client
 
 config_path = "rootwrap.conf"
 num_iterations = 100
@@ -44,12 +44,12 @@ def run_sudo(cmd):
 def run_rootwrap(cmd):
     return run_plain([
         "sudo", sys.executable, "-c",
-        "from oslo.rootwrap import cmd; cmd.main()", config_path] + cmd)
+        "from oslo_rootwrap import cmd; cmd.main()", config_path] + cmd)
 
 
 run_daemon = client.Client([
     "sudo", sys.executable, "-c",
-    "from oslo.rootwrap import cmd; cmd.daemon()", config_path]).execute
+    "from oslo_rootwrap import cmd; cmd.daemon()", config_path]).execute
 
 
 def run_one(runner, cmd):
