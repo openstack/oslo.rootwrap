@@ -6,8 +6,8 @@ The Oslo Rootwrap allows fine filtering of shell commands to run as `root`
 from OpenStack services.
 
 Rootwrap should be used as a separate Python process calling the
-oslo.rootwrap.cmd:main function. You can set up a specific console_script
-calling into oslo.rootwrap.cmd:main, called for example `nova-rootwrap`.
+``oslo_rootwrap.cmd:main`` function. You can set up a specific console_script
+calling into ``oslo_rootwrap.cmd:main``, called for example `nova-rootwrap`.
 To keep things simple, this document will consider that your console_script
 is called `/usr/bin/nova-rootwrap`.
 
@@ -318,13 +318,13 @@ Daemon mode
 Since 1.3.0 version ``oslo.rootwrap`` supports "daemon mode". In this mode
 rootwrap would start, read config file and wait for commands to be run with
 root priviledges. All communications with the daemon should go through
-``Client`` class that resides in ``oslo.rootwrap.client`` module.
+``Client`` class that resides in ``oslo_rootwrap.client`` module.
 
 Its constructor expects one argument - a list that can be passed to ``Popen``
 to create rootwrap daemon process. For ``root_helper`` above it will be
 ``["sudo", "nova-rootwrap-daemon", "/etc/neutron/rootwrap.conf"]``,
 for example. Note that it uses a separate script that points to
-``oslo.rootwrap.cmd:daemon`` endpoint (instead of ``:main``).
+``oslo_rootwrap.cmd:daemon`` endpoint (instead of ``:main``).
 
 The class provides one method ``execute`` with following arguments:
 

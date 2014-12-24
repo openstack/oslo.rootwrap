@@ -23,9 +23,9 @@ import mock
 from six import moves
 import testtools
 
-from oslo.rootwrap import cmd
-from oslo.rootwrap import filters
-from oslo.rootwrap import wrapper
+from oslo_rootwrap import cmd
+from oslo_rootwrap import filters
+from oslo_rootwrap import wrapper
 
 
 class RootwrapTestCase(testtools.TestCase):
@@ -434,6 +434,21 @@ class RootwrapTestCase(testtools.TestCase):
         config = wrapper.RootwrapConfig(raw)
         self.assertEqual(config.syslog_log_level, logging.INFO)
 
+    def test_getlogin(self):
+        with mock.patch('os.getlogin') as os_getlogin:
+            os_getlogin.return_value = 'foo'
+            self.assertEqual(wrapper._getlogin(), 'foo')
+
+    def test_getlogin_bad(self):
+        with mock.patch('os.getenv') as os_getenv:
+            with mock.patch('os.getlogin') as os_getlogin:
+                os_getenv.side_effect = [None, None, 'bar']
+                os_getlogin.side_effect = OSError(
+                    '[Errno 22] Invalid argument')
+                self.assertEqual(wrapper._getlogin(), 'bar')
+                os_getlogin.assert_called_once_with()
+                self.assertEqual(os_getenv.call_count, 3)
+
 
 class PathFilterTestCase(testtools.TestCase):
     def setUp(self):
@@ -557,8 +572,7 @@ class PathFilterTestCase(testtools.TestCase):
 
 class RunOneCommandTestCase(testtools.TestCase):
     def _test_returncode_helper(self, returncode, expected):
-        start_name = 'oslo_rootwrap.wrapper.start_subprocess'
-        with mock.patch(start_name) as mock_start:
+        with mock.patch.object(wrapper, 'start_subprocess') as mock_start:
             with mock.patch('sys.exit') as mock_exit:
                 mock_start.return_value.wait.return_value = returncode
                 cmd.run_one_command(None, mock.Mock(), None, None)
