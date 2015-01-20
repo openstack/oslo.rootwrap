@@ -5,6 +5,14 @@ Oslo Rootwrap
 The Oslo Rootwrap allows fine filtering of shell commands to run as `root`
 from OpenStack services.
 
+* License: Apache License, Version 2.0
+* Documentation: http://docs.openstack.org/developer/oslo.rootwrap
+* Source: http://git.openstack.org/cgit/openstack/oslo.rootwrap
+* Bugs: http://bugs.launchpad.net/oslo.rootwrap
+
+Using
+=====
+
 Rootwrap should be used as a separate Python process calling the
 ``oslo_rootwrap.cmd:main`` function. You can set up a specific console_script
 calling into ``oslo_rootwrap.cmd:main``, called for example `nova-rootwrap`.
