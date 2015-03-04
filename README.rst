@@ -338,8 +338,6 @@ The class provides one method ``execute`` with following arguments:
 
 * ``userargs`` - list of command line arguments that are to be used to run the
   command;
-* ``env`` - dict of environment variables to be set for it (by default it's an
-  empty dict, so all environment variables are stripped);
 * ``stdin`` - string to be passed to standard input of child process.
 
 The method returns 3-tuple containing:

@@ -43,16 +43,12 @@ class RootwrapClass(object):
         self.config = config
         self.filters = filters
 
-    def run_one_command(self, userargs, env=None, stdin=None):
-        if env is None:
-            env = {}
-
+    def run_one_command(self, userargs, stdin=None):
         obj = wrapper.start_subprocess(
             self.filters, userargs,
             exec_dirs=self.config.exec_dirs,
             log=self.config.use_syslog,
             close_fds=True,
-            env=env,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)

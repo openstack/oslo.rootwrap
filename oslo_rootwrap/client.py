@@ -127,12 +127,12 @@ class Client(object):
                 self._initialize()
             return self._proxy
 
-    def execute(self, cmd, env=None, stdin=None):
+    def execute(self, cmd, stdin=None):
         self._ensure_initialized()
         proxy = self._proxy
         retry = False
         try:
-            res = proxy.run_one_command(cmd, env, stdin)
+            res = proxy.run_one_command(cmd, stdin)
         except (EOFError, IOError):
             retry = True
         # res can be None if we received final None sent by dying server thread
@@ -140,5 +140,5 @@ class Client(object):
         # at this point.
         if retry or res is None:
             proxy = self._restart(proxy)
-            res = proxy.run_one_command(cmd, env, stdin)
+            res = proxy.run_one_command(cmd, stdin)
         return res

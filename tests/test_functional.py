@@ -166,13 +166,6 @@ class RootwrapDaemonTest(_FunctionalBase, testtools.TestCase):
         # Expect client to succesfully restart daemon and run simple request
         self.test_run_once()
 
-    def test_env_setting(self):
-        code, out, err = self.execute(['sh', '-c', 'echo $SOMEVAR'],
-                                      env={'SOMEVAR': 'teststr'})
-        self.assertEqual(0, code)
-        self.assertEqual(b'teststr\n', out)
-        self.assertEqual(b'', err)
-
     def _exec_thread(self, fifo_path):
         try:
             # Run a shell script that signals calling process through FIFO and
