@@ -14,7 +14,13 @@
 #    under the License.
 
 import os
+import pwd
 import re
+
+
+def _getuid(user):
+    """Return uid for user."""
+    return pwd.getpwnam(user).pw_uid
 
 
 class CommandFilter(object):
@@ -48,13 +54,15 @@ class CommandFilter(object):
         """Only check that the first argument (command) matches exec_path."""
         return userargs and os.path.basename(self.exec_path) == userargs[0]
 
+    def preexec(self):
+        """Setuid in subprocess right before command is invoked."""
+        if self.run_as != 'root':
+            os.setuid(_getuid(self.run_as))
+
     def get_command(self, userargs, exec_dirs=None):
-        """Returns command to execute (with sudo -u if run_as != root)."""
+        """Returns command to execute."""
         exec_dirs = exec_dirs or []
         to_exec = self.get_exec(exec_dirs=exec_dirs) or self.exec_path
-        if (self.run_as != 'root'):
-            # Used to run commands at lesser privileges
-            return ['sudo', '-u', self.run_as, to_exec] + userargs[1:]
         return [to_exec] + userargs[1:]
 
     def get_environment(self, userargs):

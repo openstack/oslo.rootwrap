@@ -17,6 +17,7 @@ import contextlib
 import io
 import logging
 import os
+import pwd
 import signal
 import subprocess
 import sys
@@ -61,6 +62,7 @@ exec_dirs=/bin""" % (filters_dir,))
 echo: CommandFilter, /bin/echo, root
 cat: CommandFilter, /bin/cat, root
 sh: CommandFilter, /bin/sh, root
+id: CommandFilter, /usr/bin/id, nobody
 """)
 
     def test_run_once(self):
@@ -74,6 +76,18 @@ sh: CommandFilter, /bin/sh, root
         self.assertEqual(0, code)
         self.assertEqual(b'teststr', out)
         self.assertEqual(b'', err)
+
+    def test_run_as(self):
+        if os.getuid() != 0:
+            self.skip('Test requires root (for setuid)')
+
+        # Should run as 'nobody'
+        code, out, err = self.execute(['id', '-u'])
+        self.assertEqual(out, '%s\n' % pwd.getpwnam('nobody').pw_uid)
+
+        # Should run as 'root'
+        code, out, err = self.execute(['sh', '-c', 'id -u'])
+        self.assertEqual(out, '0\n')
 
 
 class RootwrapTest(_FunctionalBase, testtools.TestCase):

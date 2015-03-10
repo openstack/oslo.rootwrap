@@ -175,12 +175,6 @@ def match_filter(filter_list, userargs, exec_dirs=None):
     raise NoFilterMatched()
 
 
-def _subprocess_setup():
-    # Python installs a SIGPIPE handler by default. This is usually not what
-    # non-Python subprocesses expect.
-    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
-
-
 def _getlogin():
     try:
         return os.getlogin()
@@ -199,8 +193,14 @@ def start_subprocess(filter_list, userargs, exec_dirs=[], log=False, **kwargs):
             _getlogin(), pwd.getpwuid(os.getuid())[0],
             command, filtermatch.name))
 
+    def preexec():
+        # Python installs a SIGPIPE handler by default. This is
+        # usually not what non-Python subprocesses expect.
+        signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+        filtermatch.preexec()
+
     obj = subprocess.Popen(command,
-                           preexec_fn=_subprocess_setup,
+                           preexec_fn=preexec,
                            env=filtermatch.get_environment(userargs),
                            **kwargs)
     return obj
