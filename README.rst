@@ -298,10 +298,10 @@ called directly.
 
 
 Calling rootwrap from OpenStack services
-=============================================
+========================================
 
 Standalone mode (``sudo`` way)
---------------------------
+------------------------------
 
 The `oslo.processutils` library ships with a convenience `execute()` function
 that can be used to call shell commands as `root`, if you call it with the
