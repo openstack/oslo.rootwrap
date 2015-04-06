@@ -37,7 +37,6 @@ import sys
 
 from six import moves
 
-from oslo_rootwrap import daemon as daemon_mod
 from oslo_rootwrap import wrapper
 
 RC_UNAUTHORIZED = 99
@@ -92,6 +91,10 @@ def main(run_daemon=False):
     filters = wrapper.load_filters(config.filters_path)
 
     if run_daemon:
+        # NOTE(dims): When not running as daemon, this import
+        # slows us down just a bit. So moving it here so we have
+        # it only when we need it.
+        from oslo_rootwrap import daemon as daemon_mod
         daemon_mod.daemon_start(config, filters)
     else:
         run_one_command(execname, config, filters, sys.argv)
