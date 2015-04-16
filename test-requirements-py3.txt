@@ -23,5 +23,5 @@ mock>=1.0
 # not available for Python 3.x
 # eventlet>=0.13.0
 
-oslotest>=1.5.1,<1.6.0  # Apache-2.0
+oslotest>=1.5.1  # Apache-2.0
 
