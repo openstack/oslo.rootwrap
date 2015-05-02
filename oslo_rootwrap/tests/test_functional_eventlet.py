@@ -19,7 +19,7 @@ if os.environ.get('TEST_EVENTLET', False):
     import eventlet
     eventlet.monkey_patch()
 
-    from tests import test_functional
+    from oslo_rootwrap.tests import test_functional
 
     class RootwrapDaemonTest(test_functional.RootwrapDaemonTest):
         def assert_unpatched(self):

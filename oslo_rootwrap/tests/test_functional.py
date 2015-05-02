@@ -41,8 +41,8 @@ import testtools
 from testtools import content
 
 from oslo_rootwrap import client
+from oslo_rootwrap.tests import run_daemon
 from oslo_rootwrap import wrapper
-from tests import run_daemon
 
 
 class _FunctionalBase(object):
