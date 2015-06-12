@@ -72,8 +72,8 @@ class Client(object):
                                        stdin=subprocess.PIPE,
                                        stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE)
-        LOG.info("Spawned new rootwrap daemon process with pid=%d",
-                 process_obj.pid)
+        LOG.debug("Popen for %s command has been instantiated",
+                  self._start_command)
 
         self._process = process_obj
         socket_path = process_obj.stdout.readline()[:-1]
@@ -86,6 +86,8 @@ class Client(object):
             # NOTE(yorik-sar): don't expose stdout here
             raise Exception("Failed to spawn rootwrap process.\nstderr:\n%s" %
                             (stderr,))
+        LOG.info("Spawned new rootwrap daemon process with pid=%d",
+                 process_obj.pid)
         self._manager = ClientManager(socket_path, authkey)
         self._manager.connect()
         self._proxy = self._manager.rootwrap()
