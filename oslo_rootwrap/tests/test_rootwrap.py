@@ -24,6 +24,7 @@ from six import moves
 import testtools
 
 from oslo_rootwrap import cmd
+from oslo_rootwrap import daemon
 from oslo_rootwrap import filters
 from oslo_rootwrap import wrapper
 
@@ -583,3 +584,19 @@ class RunOneCommandTestCase(testtools.TestCase):
 
     def test_negative_returncode(self):
         self._test_returncode_helper(-1, 129)
+
+
+class DaemonCleanupException(Exception):
+    pass
+
+
+class DaemonCleanupTestCase(testtools.TestCase):
+
+    @mock.patch('os.chmod')
+    @mock.patch('shutil.rmtree')
+    @mock.patch('tempfile.mkdtemp')
+    @mock.patch('multiprocessing.managers.BaseManager.get_server',
+                side_effect=DaemonCleanupException)
+    def test_daemon_no_cleanup_for_uninitialized_server(self, gs, *args):
+        self.assertRaises(DaemonCleanupException, daemon.daemon_start,
+                          config=None, filters=None)
