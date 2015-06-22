@@ -2,14 +2,14 @@
 # of appearance. Changing the order has an impact on the overall integration
 # process, which may cause wedges in the gate later.
 
-hacking>=0.10.0,<0.11
+hacking<0.11,>=0.10.0
 
 discover
 fixtures>=0.3.14
 python-subunit>=0.0.18
 testrepository>=0.0.18
 testscenarios>=0.4
-testtools>=0.9.36,!=1.2.0
+testtools>=1.4.0
 
 # when we can require tox>= 1.4, this can go into tox.ini:
 #  [testenv:cover]
@@ -23,5 +23,5 @@ mock>=1.0
 # not available for Python 3.x
 # eventlet>=0.13.0
 
-oslotest>=1.5.1  # Apache-2.0
+oslotest>=1.5.1 # Apache-2.0
 
