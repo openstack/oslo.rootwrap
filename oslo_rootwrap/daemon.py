@@ -90,46 +90,48 @@ def daemon_start(config, filters):
         manager_cls = get_manager_class(config, filters)
         manager = manager_cls(address=socket_path)
         server = manager.get_server()
-        # allow everybody to connect to the socket
-        rw_rw_rw_ = (stat.S_IRUSR | stat.S_IWUSR |
-                     stat.S_IRGRP | stat.S_IWGRP |
-                     stat.S_IROTH | stat.S_IWOTH)
-        os.chmod(socket_path, rw_rw_rw_)
         try:
-            # In Python 3 we have to use buffer to push in bytes directly
-            stdout = sys.stdout.buffer
-        except AttributeError:
-            stdout = sys.stdout
-        stdout.write(socket_path.encode('utf-8'))
-        stdout.write(b'\n')
-        stdout.write(bytes(server.authkey))
-        sys.stdin.close()
-        sys.stdout.close()
-        sys.stderr.close()
-        # Gracefully shutdown on INT or TERM signals
-        stop = functools.partial(daemon_stop, server)
-        signal.signal(signal.SIGTERM, stop)
-        signal.signal(signal.SIGINT, stop)
-        LOG.info("Starting rootwrap daemon main loop")
-        server.serve_forever()
-    finally:
-        conn = server.listener
-        # This will break accept() loop with EOFError if it was not in the main
-        # thread (as in Python 3.x)
-        conn.close()
-        # Closing all currently connected client sockets for reading to break
-        # worker threads blocked on recv()
-        for cl_conn in conn.get_accepted():
+            # allow everybody to connect to the socket
+            rw_rw_rw_ = (stat.S_IRUSR | stat.S_IWUSR |
+                         stat.S_IRGRP | stat.S_IWGRP |
+                         stat.S_IROTH | stat.S_IWOTH)
+            os.chmod(socket_path, rw_rw_rw_)
             try:
-                cl_conn.half_close()
-            except Exception:
-                # Most likely the socket have already been closed
-                LOG.debug("Failed to close connection")
-        LOG.info("Waiting for all client threads to finish.")
-        for thread in threading.enumerate():
-            if thread.daemon:
-                LOG.debug("Joining thread %s", thread)
-                thread.join()
+                # In Python 3 we have to use buffer to push in bytes directly
+                stdout = sys.stdout.buffer
+            except AttributeError:
+                stdout = sys.stdout
+            stdout.write(socket_path.encode('utf-8'))
+            stdout.write(b'\n')
+            stdout.write(bytes(server.authkey))
+            sys.stdin.close()
+            sys.stdout.close()
+            sys.stderr.close()
+            # Gracefully shutdown on INT or TERM signals
+            stop = functools.partial(daemon_stop, server)
+            signal.signal(signal.SIGTERM, stop)
+            signal.signal(signal.SIGINT, stop)
+            LOG.info("Starting rootwrap daemon main loop")
+            server.serve_forever()
+        finally:
+            conn = server.listener
+            # This will break accept() loop with EOFError if it was not in the
+            # main thread (as in Python 3.x)
+            conn.close()
+            # Closing all currently connected client sockets for reading to
+            # break worker threads blocked on recv()
+            for cl_conn in conn.get_accepted():
+                try:
+                    cl_conn.half_close()
+                except Exception:
+                    # Most likely the socket have already been closed
+                    LOG.debug("Failed to close connection")
+            LOG.info("Waiting for all client threads to finish.")
+            for thread in threading.enumerate():
+                if thread.daemon:
+                    LOG.debug("Joining thread %s", thread)
+                    thread.join()
+    finally:
         LOG.debug("Removing temporary directory %s", temp_dir)
         shutil.rmtree(temp_dir)
 
