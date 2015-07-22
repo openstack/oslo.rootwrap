@@ -18,8 +18,7 @@ oslotest>=1.7.0 # Apache-2.0
 
 
 # mocking framework
-mock!=1.1.4,>=1.1;python_version!='2.6'
-mock==1.0.1;python_version=='2.6'
+mock>=1.2
 
 # rootwrap daemon's client should be verified to run in eventlet
 eventlet>=0.17.4
