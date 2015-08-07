@@ -156,6 +156,54 @@ class KillFilter(CommandFilter):
     def __init__(self, *args):
         super(KillFilter, self).__init__("/bin/kill", *args)
 
+    def _program_path(self, command):
+        """Determine the full path for command"""
+        if os.path.isabs(command):
+            return command
+        else:
+            for path in os.environ.get('PATH', '').split(os.pathsep):
+                program = os.path.join(path, command)
+                if os.path.isfile(program):
+                    return program
+        return command
+
+    def _program(self, pid):
+        """Determine the program associated with pid"""
+
+        try:
+            command = os.readlink("/proc/%d/exe" % int(pid))
+        except (ValueError, EnvironmentError):
+            # Incorrect PID
+            return None
+
+        # NOTE(yufang521247): /proc/PID/exe may have '\0' on the
+        # end, because python doesn't stop at '\0' when read the
+        # target path.
+        command = command.partition('\0')[0]
+
+        # NOTE(dprince): /proc/PID/exe may have ' (deleted)' on
+        # the end if an executable is updated or deleted
+        if command.endswith(" (deleted)"):
+            command = command[:-len(" (deleted)")]
+
+        # /proc/PID/exe may have been renamed with
+        # a ';......' or '.#prelink#......' suffix etc.
+        # So defer to /proc/PID/cmdline in that case.
+        if not os.path.isfile(command):
+            try:
+                with open("/proc/%d/cmdline" % int(pid)) as pfile:
+                    cmdline = pfile.read().partition('\0')[0]
+                cmdline = self._program_path(cmdline)
+                if os.path.isfile(cmdline):
+                    command = cmdline
+                # Note we don't return None if cmdline doesn't exist
+                # as that will allow killing a process where the exe
+                # has been removed from the system rather than updated.
+            except EnvironmentError:
+                return None
+
+        return command
+
     def match(self, userargs):
         if not userargs or userargs[0] != "kill":
             return False
@@ -173,21 +221,10 @@ class KillFilter(CommandFilter):
             if len(self.args) > 1:
                 # No signal requested, but filter requires specific signal
                 return False
-        try:
-            command = os.readlink("/proc/%d/exe" % int(args[1]))
-        except (ValueError, OSError):
-            # Incorrect PID
+
+        command = self._program(args[1])
+        if not command:
             return False
-
-        # NOTE(yufang521247): /proc/PID/exe may have '\0' on the
-        # end, because python doesn't stop at '\0' when read the
-        # target path.
-        command = command.partition('\0')[0]
-
-        # NOTE(dprince): /proc/PID/exe may have ' (deleted)' on
-        # the end if an executable is updated or deleted
-        if command.endswith(" (deleted)"):
-            command = command[:-len(" (deleted)")]
 
         kill_command = self.args[0]
 
