@@ -77,7 +77,7 @@ def main(run_daemon=False):
         rawconfig.read(configfile)
         config = wrapper.RootwrapConfig(rawconfig)
     except ValueError as exc:
-        msg = "Incorrect value in %s: %s" % (configfile, exc.message)
+        msg = "Incorrect value in %s: %s" % (configfile, exc.args[0])
         _exit_error(execname, msg, RC_BADCONFIG, log=False)
     except moves.configparser.Error:
         _exit_error(execname, "Incorrect configuration file: %s" % configfile,
