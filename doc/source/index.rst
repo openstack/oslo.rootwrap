@@ -13,6 +13,14 @@ Contents
    usage
    contributing
 
+Release Notes
+=============
+
+.. toctree::
+   :maxdepth: 1
+
+   history
+
 Indices and tables
 ==================
 
