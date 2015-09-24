@@ -1,14 +1,13 @@
-===============
- oslo.rootwrap
-===============
+===============================================
+ oslo.rootwrap -- Escalated Permission Control
+===============================================
 
-Contents
-========
+oslo.rootwrap allows fine-grained filtering of shell commands to run
+as `root` from OpenStack services.
 
 .. toctree::
    :maxdepth: 2
 
-   readme
    installation
    usage
    contributing
