@@ -173,7 +173,7 @@ class RootwrapDaemonTest(_FunctionalBase, testtools.TestCase):
         self.execute(['cat'])
         # Make daemon go away
         os.kill(self.client._process.pid, signal.SIGTERM)
-        # Expect client to succesfully restart daemon and run simple request
+        # Expect client to successfully restart daemon and run simple request
         self.test_run_once()
 
     def _exec_thread(self, fifo_path):

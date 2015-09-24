@@ -38,7 +38,7 @@ if patched_socket:
     # GreenSocket.recv_into:
     # https://bitbucket.org/eventlet/eventlet/pull-request/41
     # This check happens here instead of jsonrpc to avoid importing eventlet
-    # from daemon code that is run with root priviledges.
+    # from daemon code that is run with root privileges.
     jsonrpc.JsonConnection.recvall = jsonrpc.JsonConnection._recvall_slow
 
 try:

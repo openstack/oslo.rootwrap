@@ -102,7 +102,7 @@ filters_path
 
 exec_dirs
     Comma-separated list of directories to search executables in, in case
-    filters do not explicitely specify a full path. If not specified, defaults
+    filters do not explicitly specify a full path. If not specified, defaults
     to the system `PATH` environment variable. All directories listed must be
     owned and only writeable by `root`. Example:
     ``exec_dirs=/sbin,/usr/sbin,/bin,/usr/bin``
@@ -325,7 +325,7 @@ Daemon mode
 
 Since 1.3.0 version ``oslo.rootwrap`` supports "daemon mode". In this mode
 rootwrap would start, read config file and wait for commands to be run with
-root priviledges. All communications with the daemon should go through
+root privileges. All communications with the daemon should go through
 ``Client`` class that resides in ``oslo_rootwrap.client`` module.
 
 Its constructor expects one argument - a list that can be passed to ``Popen``

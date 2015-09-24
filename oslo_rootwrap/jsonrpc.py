@@ -146,7 +146,7 @@ class JsonConnection(object):
     def half_close(self):
         self._socket.shutdown(socket.SHUT_RD)
 
-    # Unfortunatelly Python 2.6 doesn't support memoryview, so we'll have
+    # Unfortunately Python 2.6 doesn't support memoryview, so we'll have
     # to do it the slow way.
     def _recvall_slow(self, size):
         remaining = size
