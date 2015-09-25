@@ -2,6 +2,14 @@
 Oslo Rootwrap
 -------------
 
+.. image:: https://img.shields.io/pypi/v/oslo.rootwrap.svg
+    :target: https://pypi.python.org/pypi/oslo.rootwrap/
+    :alt: Latest Version
+
+.. image:: https://img.shields.io/pypi/dm/oslo.rootwrap.svg
+    :target: https://pypi.python.org/pypi/oslo.rootwrap/
+    :alt: Downloads
+
 The Oslo Rootwrap allows fine filtering of shell commands to run as `root`
 from OpenStack services.
 
