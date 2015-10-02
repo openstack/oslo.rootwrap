@@ -59,17 +59,29 @@ sh: CommandFilter, /bin/sh, root
 id: CommandFilter, /usr/bin/id, nobody
 """)
 
-    def test_run_once(self):
+    def _test_run_once(self, expect_byte=True):
         code, out, err = self.execute(['echo', 'teststr'])
         self.assertEqual(0, code)
-        self.assertEqual(b'teststr\n', out)
-        self.assertEqual(b'', err)
+        if expect_byte:
+            expect_out = b'teststr\n'
+            expect_err = b''
+        else:
+            expect_out = 'teststr\n'
+            expect_err = ''
+        self.assertEqual(expect_out, out)
+        self.assertEqual(expect_err, err)
 
-    def test_run_with_stdin(self):
+    def _test_run_with_stdin(self, expect_byte=True):
         code, out, err = self.execute(['cat'], stdin=b'teststr')
         self.assertEqual(0, code)
-        self.assertEqual(b'teststr', out)
-        self.assertEqual(b'', err)
+        if expect_byte:
+            expect_out = b'teststr'
+            expect_err = b''
+        else:
+            expect_out = 'teststr'
+            expect_err = ''
+        self.assertEqual(expect_out, out)
+        self.assertEqual(expect_err, err)
 
     def test_run_as(self):
         if os.getuid() != 0:
@@ -105,6 +117,12 @@ class RootwrapTest(_FunctionalBase, testtools.TestCase):
         self.addDetail('stderr',
                        content.text_content(err.decode('utf-8', 'replace')))
         return proc.returncode, out, err
+
+    def test_run_once(self):
+        self._test_run_once(expect_byte=True)
+
+    def test_run_with_stdin(self):
+        self._test_run_with_stdin(expect_byte=True)
 
 
 class RootwrapDaemonTest(_FunctionalBase, testtools.TestCase):
@@ -159,6 +177,12 @@ class RootwrapDaemonTest(_FunctionalBase, testtools.TestCase):
 
         self.execute = self.client.execute
 
+    def test_run_once(self):
+        self._test_run_once(expect_byte=False)
+
+    def test_run_with_stdin(self):
+        self._test_run_with_stdin(expect_byte=False)
+
     def test_error_propagation(self):
         self.assertRaises(wrapper.NoFilterMatched, self.execute, ['other'])
 
@@ -200,8 +224,8 @@ class RootwrapDaemonTest(_FunctionalBase, testtools.TestCase):
             raise self._thread_res  # Python 3 will even provide nice traceback
         code, out, err = self._thread_res
         self.assertEqual(0, code)
-        self.assertEqual(b'OK\n', out)
-        self.assertEqual(b'', err)
+        self.assertEqual('OK\n', out)
+        self.assertEqual('', err)
 
     @contextlib.contextmanager
     def _test_daemon_cleanup(self):
