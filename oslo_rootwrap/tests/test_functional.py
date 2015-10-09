@@ -24,19 +24,13 @@ import sys
 import threading
 
 try:
-    import StringIO
-except ImportError:
-    StringIO = io.StringIO
-else:
-    StringIO = StringIO.StringIO
-
-try:
     import eventlet
 except ImportError:
     eventlet = None
 
 import fixtures
 import mock
+import six
 import testtools
 from testtools import content
 
@@ -133,7 +127,7 @@ class RootwrapDaemonTest(_FunctionalBase, testtools.TestCase):
         self.addCleanup(p.stop)
 
         # Collect client logs
-        client_log = StringIO()
+        client_log = six.StringIO()
         handler = logging.StreamHandler(client_log)
         log_format = run_daemon.log_format.replace('+', ' ')
         handler.setFormatter(logging.Formatter(log_format))

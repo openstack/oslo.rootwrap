@@ -259,7 +259,7 @@ class RootwrapTestCase(testtools.TestCase):
         with mock.patch('os.readlink') as readlink:
             readlink.return_value = command + ';90bfb2 (deleted)'
             m = mock.mock_open(read_data=command)
-            with mock.patch("__builtin__.open", m, create=True):
+            with mock.patch("six.moves.builtins.open", m, create=True):
                 with mock.patch('os.path.isfile') as exists:
                     def fake_exists(path):
                         return path == command
