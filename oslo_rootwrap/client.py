@@ -16,24 +16,15 @@
 import logging
 from multiprocessing import managers
 from multiprocessing import util as mp_util
-import os
-import subprocess
 import threading
 import weakref
 
-try:
-    import eventlet.patcher
-except ImportError:
-    patched_socket = False
-else:
-    # In tests patching happens later, so we'll rely on environment variable
-    patched_socket = (eventlet.patcher.is_monkey_patched('socket') or
-                      os.environ.get('TEST_EVENTLET', False))
-
+import oslo_rootwrap
 from oslo_rootwrap import daemon
 from oslo_rootwrap import jsonrpc
+from oslo_rootwrap import subprocess
 
-if patched_socket:
+if oslo_rootwrap._patched_socket:
     # We have to use slow version of recvall with eventlet because of a bug in
     # GreenSocket.recv_into:
     # https://bitbucket.org/eventlet/eventlet/pull-request/41

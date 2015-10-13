@@ -14,11 +14,11 @@
 #    under the License.
 
 import logging
-import subprocess
 import sys
 import threading
 
 from oslo_rootwrap import cmd
+from oslo_rootwrap import subprocess
 
 
 def forward_stream(fr, to):

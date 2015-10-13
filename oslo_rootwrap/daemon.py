@@ -22,12 +22,12 @@ import os
 import shutil
 import signal
 import stat
-import subprocess
 import sys
 import tempfile
 import threading
 
 from oslo_rootwrap import jsonrpc
+from oslo_rootwrap import subprocess
 from oslo_rootwrap import wrapper
 
 LOG = logging.getLogger(__name__)

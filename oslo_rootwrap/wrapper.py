@@ -18,11 +18,11 @@ import logging.handlers
 import os
 import pwd
 import signal
-import subprocess
 
 from six import moves
 
 from oslo_rootwrap import filters
+from oslo_rootwrap import subprocess
 
 
 class NoFilterMatched(Exception):

@@ -19,7 +19,6 @@ import logging
 import os
 import pwd
 import signal
-import subprocess
 import sys
 import threading
 
@@ -35,6 +34,7 @@ import testtools
 from testtools import content
 
 from oslo_rootwrap import client
+from oslo_rootwrap import subprocess
 from oslo_rootwrap.tests import run_daemon
 from oslo_rootwrap import wrapper
 
@@ -121,7 +121,7 @@ class RootwrapDaemonTest(_FunctionalBase, testtools.TestCase):
 
         # Collect daemon logs
         daemon_log = io.BytesIO()
-        p = mock.patch('subprocess.Popen',
+        p = mock.patch('oslo_rootwrap.subprocess.Popen',
                        run_daemon.forwarding_popen(daemon_log))
         p.start()
         self.addCleanup(p.stop)
