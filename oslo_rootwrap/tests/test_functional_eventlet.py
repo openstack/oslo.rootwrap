@@ -25,7 +25,3 @@ if os.environ.get('TEST_EVENTLET', False):
         def assert_unpatched(self):
             # This test case is specifically for eventlet testing
             pass
-
-        def test_graceful_death(self):
-            # This test fails with eventlet on Python 2.6.6 on CentOS
-            self.skip("Eventlet doesn't like FIFOs")

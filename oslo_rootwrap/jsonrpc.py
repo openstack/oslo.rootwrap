@@ -69,8 +69,7 @@ class JsonListener(object):
             self._socket.close()
             raise
         self.closed = False
-        # Python 2.6 doesn't have WeakSet
-        self._accepted = weakref.WeakKeyDictionary()
+        self._accepted = weakref.WeakSet()
 
     def accept(self):
         while True:
@@ -85,7 +84,7 @@ class JsonListener(object):
                 break
         s.setblocking(True)
         conn = JsonConnection(s)
-        self._accepted[conn] = None
+        self._accepted.add(conn)
         return conn
 
     def close(self):
@@ -95,7 +94,7 @@ class JsonListener(object):
             self.closed = True
 
     def get_accepted(self):
-        return list(self._accepted)
+        return self._accepted
 
 if hasattr(managers.Server, 'accepter'):
     # In Python 3 accepter() thread has infinite loop. We break it with
@@ -107,13 +106,6 @@ if hasattr(managers.Server, 'accepter'):
             pass
     old_accepter = managers.Server.accepter
     managers.Server.accepter = silent_accepter
-
-try:
-    memoryview
-except NameError:
-    has_memoryview = False
-else:
-    has_memoryview = True
 
 
 class JsonConnection(object):
@@ -146,8 +138,9 @@ class JsonConnection(object):
     def half_close(self):
         self._socket.shutdown(socket.SHUT_RD)
 
-    # Unfortunately Python 2.6 doesn't support memoryview, so we'll have
-    # to do it the slow way.
+    # We have to use slow version of recvall with eventlet because of a bug in
+    # GreenSocket.recv_into:
+    # https://bitbucket.org/eventlet/eventlet/pull-request/41
     def _recvall_slow(self, size):
         remaining = size
         res = []
@@ -159,8 +152,7 @@ class JsonConnection(object):
             remaining -= len(piece)
         return b''.join(res)
 
-    # For all later versions we can do it almost like in C
-    def _recvall_fast(self, size):
+    def recvall(self, size):
         buf = bytearray(size)
         mem = memoryview(buf)
         got = 0
@@ -172,11 +164,6 @@ class JsonConnection(object):
         # bytearray is mostly compatible with bytes and we could avoid copying
         # data here, but hmac doesn't like it in Python 3.3 (not in 2.7 or 3.4)
         return bytes(buf)
-
-    if has_memoryview:
-        recvall = _recvall_fast
-    else:
-        recvall = _recvall_slow
 
     @staticmethod
     def dumps(obj):
