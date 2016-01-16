@@ -4,21 +4,21 @@
 
 hacking<0.11,>=0.10.0
 
-discover
-fixtures>=1.3.1
-python-subunit>=0.0.18
-testrepository>=0.0.18
-testscenarios>=0.4
-testtools>=1.4.0
+discover # BSD
+fixtures>=1.3.1 # Apache-2.0/BSD
+python-subunit>=0.0.18 # Apache-2.0/BSD
+testrepository>=0.0.18 # Apache-2.0/BSD
+testscenarios>=0.4 # Apache-2.0/BSD
+testtools>=1.4.0 # MIT
 
 # this is required for the docs build jobs
-sphinx!=1.2.0,!=1.3b1,<1.3,>=1.1.2
+sphinx!=1.2.0,!=1.3b1,<1.3,>=1.1.2 # BSD
 oslosphinx!=3.4.0,>=2.5.0 # Apache-2.0
 oslotest>=1.10.0 # Apache-2.0
 
 
 # mocking framework
-mock>=1.2
+mock>=1.2 # BSD
 
 # rootwrap daemon's client should be verified to run in eventlet
-eventlet>=0.17.4
+eventlet>=0.17.4 # MIT
