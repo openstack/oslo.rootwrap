@@ -5,6 +5,7 @@ ChangeLog
 *.pyc
 *.log
 .tox
+.eggs*
 .coverage
 oslo.rootwrap.egg-info/
 build/

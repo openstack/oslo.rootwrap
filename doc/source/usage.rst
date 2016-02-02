@@ -102,11 +102,6 @@ use_syslog
     Enable logging to syslog. Default value is False. Example:
     ``use_syslog=True``
 
-use_syslog_rfc_format
-    Enable RFC5424 compliant format for syslog (add APP-NAME before MSG part).
-    Default value is False. Example:
-    ``use_syslog_rfc_format=True``
-
 syslog_log_facility
     Which syslog facility to use for syslog logging. Valid values include
     ``auth``, ``authpriv``, ``syslog``, ``user0``, ``user1``...
