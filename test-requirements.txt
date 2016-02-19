@@ -21,4 +21,4 @@ oslotest>=1.10.0 # Apache-2.0
 mock>=1.2 # BSD
 
 # rootwrap daemon's client should be verified to run in eventlet
-eventlet>=0.18.2 # MIT
+eventlet!=0.18.3,>=0.18.2 # MIT
