@@ -22,3 +22,5 @@ mock>=1.2 # BSD
 
 # rootwrap daemon's client should be verified to run in eventlet
 eventlet!=0.18.3,>=0.18.2 # MIT
+
+reno>=1.8.0 # Apache2
