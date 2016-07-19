@@ -29,6 +29,22 @@ from oslo_rootwrap import subprocess
 from oslo_rootwrap import wrapper
 
 
+class RootwrapLoaderTestCase(testtools.TestCase):
+
+    def test_privsep_in_loader(self):
+        privsep = ["privsep-helper", "--context", "foo"]
+        filterlist = wrapper.load_filters([])
+
+        # mock out get_exec because
+        with mock.patch.object(filters.CommandFilter, 'get_exec') as ge:
+            ge.return_value = "/fake/privsep-helper"
+            filtermatch = wrapper.match_filter(filterlist, privsep)
+
+            self.assertIsNotNone(filtermatch)
+            self.assertEqual(filtermatch.get_command(privsep),
+                             ["/fake/privsep-helper", "--context", "foo"])
+
+
 class RootwrapTestCase(testtools.TestCase):
     if os.path.exists('/sbin/ip'):
         _ip = '/sbin/ip'

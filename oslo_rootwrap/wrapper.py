@@ -125,6 +125,10 @@ def load_filters(filters_path):
                     continue
                 newfilter.name = name
                 filterlist.append(newfilter)
+    # And always include privsep-helper
+    privsep = build_filter("CommandFilter", "privsep-helper", "root")
+    privsep.name = "privsep-helper"
+    filterlist.append(privsep)
     return filterlist
 
 
