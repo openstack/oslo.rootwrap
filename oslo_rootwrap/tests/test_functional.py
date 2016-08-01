@@ -89,11 +89,11 @@ id: CommandFilter, /usr/bin/id, nobody
 
         # Should run as 'nobody'
         code, out, err = self.execute(['id', '-u'])
-        self.assertEqual(out, '%s\n' % pwd.getpwnam('nobody').pw_uid)
+        self.assertEqual('%s\n' % pwd.getpwnam('nobody').pw_uid, out)
 
         # Should run as 'root'
         code, out, err = self.execute(['sh', '-c', 'id -u'])
-        self.assertEqual(out, '0\n')
+        self.assertEqual('0\n', out)
 
 
 class RootwrapTest(_FunctionalBase, testtools.TestCase):

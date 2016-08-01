@@ -41,8 +41,8 @@ class RootwrapLoaderTestCase(testtools.TestCase):
             filtermatch = wrapper.match_filter(filterlist, privsep)
 
             self.assertIsNotNone(filtermatch)
-            self.assertEqual(filtermatch.get_command(privsep),
-                             ["/fake/privsep-helper", "--context", "foo"])
+            self.assertEqual(["/fake/privsep-helper", "--context", "foo"],
+                             filtermatch.get_command(privsep))
 
 
 class RootwrapTestCase(testtools.TestCase):
@@ -91,8 +91,8 @@ class RootwrapTestCase(testtools.TestCase):
         usercmd = ["ls", "/root"]
         filtermatch = wrapper.match_filter(self.filters, usercmd)
         self.assertFalse(filtermatch is None)
-        self.assertEqual(filtermatch.get_command(usercmd),
-                         ["/bin/ls", "/root"])
+        self.assertEqual(["/bin/ls", "/root"],
+                         filtermatch.get_command(usercmd))
 
     def test_RegExpFilter_reject(self):
         usercmd = ["ls", "root"]
@@ -114,10 +114,10 @@ class RootwrapTestCase(testtools.TestCase):
         f = filters.EnvFilter("env", "root", config_file_arg + '=A',
                               'NETWORK_ID=', "/usr/bin/dnsmasq")
         self.assertTrue(f.match(usercmd))
-        self.assertEqual(f.get_command(usercmd), ['/usr/bin/dnsmasq', 'foo'])
+        self.assertEqual(['/usr/bin/dnsmasq', 'foo'], f.get_command(usercmd))
         env = f.get_environment(usercmd)
-        self.assertEqual(env.get(config_file_arg), 'A')
-        self.assertEqual(env.get('NETWORK_ID'), 'foobar')
+        self.assertEqual('A', env.get(config_file_arg))
+        self.assertEqual('foobar', env.get('NETWORK_ID'))
 
     def test_EnvFilter(self):
         envset = ['A=/some/thing', 'B=somethingelse']
@@ -151,11 +151,11 @@ class RootwrapTestCase(testtools.TestCase):
         self.assertFalse(f.match(envcmd[1:]))
 
         # ensure that the env command is stripped when executing
-        self.assertEqual(f.exec_args(usercmd), realcmd)
+        self.assertEqual(realcmd, f.exec_args(usercmd))
         env = f.get_environment(usercmd)
         # check that environment variables are set
-        self.assertEqual(env.get('A'), '/some/thing')
-        self.assertEqual(env.get('B'), 'somethingelse')
+        self.assertEqual('/some/thing', env.get('A'))
+        self.assertEqual('somethingelse', env.get('B'))
         self.assertFalse('sleep' in env.keys())
 
     def test_EnvFilter_without_leading_env(self):
@@ -168,13 +168,13 @@ class RootwrapTestCase(testtools.TestCase):
         # accept without leading env
         self.assertTrue(f.match(envset + ["sleep"]))
 
-        self.assertEqual(f.get_command(envcmd + realcmd), realcmd)
-        self.assertEqual(f.get_command(envset + realcmd), realcmd)
+        self.assertEqual(realcmd, f.get_command(envcmd + realcmd))
+        self.assertEqual(realcmd, f.get_command(envset + realcmd))
 
         env = f.get_environment(envset + realcmd)
         # check that environment variables are set
-        self.assertEqual(env.get('A'), '/some/thing')
-        self.assertEqual(env.get('B'), 'somethingelse')
+        self.assertEqual('/some/thing', env.get('A'))
+        self.assertEqual('somethingelse', env.get('B'))
         self.assertFalse('sleep' in env.keys())
 
     def test_KillFilter(self):
@@ -288,7 +288,7 @@ class RootwrapTestCase(testtools.TestCase):
         usercmd = ['cat', '/bad/file']
         self.assertFalse(f.match(['cat', '/bad/file']))
         usercmd = ['cat', goodfn]
-        self.assertEqual(f.get_command(usercmd), ['/bin/cat', goodfn])
+        self.assertEqual(['/bin/cat', goodfn], f.get_command(usercmd))
         self.assertTrue(f.match(usercmd))
 
     def test_IpFilter_non_netns(self):
@@ -429,22 +429,22 @@ class RootwrapTestCase(testtools.TestCase):
         # Check default values
         raw.set('DEFAULT', 'filters_path', '/a,/b')
         config = wrapper.RootwrapConfig(raw)
-        self.assertEqual(config.filters_path, ['/a', '/b'])
-        self.assertEqual(config.exec_dirs, os.environ["PATH"].split(':'))
+        self.assertEqual(['/a', '/b'], config.filters_path)
+        self.assertEqual(os.environ["PATH"].split(':'), config.exec_dirs)
 
         with fixtures.EnvironmentVariable("PATH"):
             c = wrapper.RootwrapConfig(raw)
-            self.assertEqual(c.exec_dirs, [])
+            self.assertEqual([], c.exec_dirs)
 
         self.assertFalse(config.use_syslog)
-        self.assertEqual(config.syslog_log_facility,
-                         logging.handlers.SysLogHandler.LOG_SYSLOG)
-        self.assertEqual(config.syslog_log_level, logging.ERROR)
+        self.assertEqual(logging.handlers.SysLogHandler.LOG_SYSLOG,
+                         config.syslog_log_facility)
+        self.assertEqual(logging.ERROR, config.syslog_log_level)
 
         # Check general values
         raw.set('DEFAULT', 'exec_dirs', '/a,/x')
         config = wrapper.RootwrapConfig(raw)
-        self.assertEqual(config.exec_dirs, ['/a', '/x'])
+        self.assertEqual(['/a', '/x'], config.exec_dirs)
 
         raw.set('DEFAULT', 'use_syslog', 'oui')
         self.assertRaises(ValueError, wrapper.RootwrapConfig, raw)
@@ -456,23 +456,23 @@ class RootwrapTestCase(testtools.TestCase):
         self.assertRaises(ValueError, wrapper.RootwrapConfig, raw)
         raw.set('DEFAULT', 'syslog_log_facility', 'local0')
         config = wrapper.RootwrapConfig(raw)
-        self.assertEqual(config.syslog_log_facility,
-                         logging.handlers.SysLogHandler.LOG_LOCAL0)
+        self.assertEqual(logging.handlers.SysLogHandler.LOG_LOCAL0,
+                         config.syslog_log_facility)
         raw.set('DEFAULT', 'syslog_log_facility', 'LOG_AUTH')
         config = wrapper.RootwrapConfig(raw)
-        self.assertEqual(config.syslog_log_facility,
-                         logging.handlers.SysLogHandler.LOG_AUTH)
+        self.assertEqual(logging.handlers.SysLogHandler.LOG_AUTH,
+                         config.syslog_log_facility)
 
         raw.set('DEFAULT', 'syslog_log_level', 'bar')
         self.assertRaises(ValueError, wrapper.RootwrapConfig, raw)
         raw.set('DEFAULT', 'syslog_log_level', 'INFO')
         config = wrapper.RootwrapConfig(raw)
-        self.assertEqual(config.syslog_log_level, logging.INFO)
+        self.assertEqual(logging.INFO, config.syslog_log_level)
 
     def test_getlogin(self):
         with mock.patch('os.getlogin') as os_getlogin:
             os_getlogin.return_value = 'foo'
-            self.assertEqual(wrapper._getlogin(), 'foo')
+            self.assertEqual('foo', wrapper._getlogin())
 
     def test_getlogin_bad(self):
         with mock.patch('os.getenv') as os_getenv:
@@ -480,9 +480,9 @@ class RootwrapTestCase(testtools.TestCase):
                 os_getenv.side_effect = [None, None, 'bar']
                 os_getlogin.side_effect = OSError(
                     '[Errno 22] Invalid argument')
-                self.assertEqual(wrapper._getlogin(), 'bar')
+                self.assertEqual('bar', wrapper._getlogin())
                 os_getlogin.assert_called_once_with()
-                self.assertEqual(os_getenv.call_count, 3)
+                self.assertEqual(3, os_getenv.call_count)
 
 
 class PathFilterTestCase(testtools.TestCase):
