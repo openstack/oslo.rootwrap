@@ -254,33 +254,42 @@ class RootwrapTestCase(testtools.TestCase):
                 exists.side_effect = fake_exists
                 self.assertTrue(f.match(usercmd))
 
-    def test_KillFilter_upgraded_exe(self):
+    @mock.patch('os.readlink')
+    @mock.patch('os.path.isfile')
+    def test_KillFilter_upgraded_exe(self, mock_isfile, mock_readlink):
         """Makes sure upgraded exe's are killed correctly."""
         f = filters.KillFilter("root", "/bin/commandddddd")
         command = "/bin/commandddddd"
         usercmd = ['kill', 1234]
-        with mock.patch('os.readlink') as readlink:
-            readlink.return_value = command + '\0\05190bfb2 (deleted)'
-            with mock.patch('os.path.isfile') as exists:
-                def fake_exists(path):
-                    return path == command
-                exists.side_effect = fake_exists
-                self.assertTrue(f.match(usercmd))
 
-    def test_KillFilter_renamed_exe(self):
+        def fake_exists(path):
+            return path == command
+
+        mock_readlink.return_value = command + '\0\05190bfb2 (deleted)'
+        mock_isfile.side_effect = fake_exists
+        self.assertTrue(f.match(usercmd))
+
+    @mock.patch('os.readlink')
+    @mock.patch('os.path.isfile')
+    @mock.patch('os.path.exists')
+    @mock.patch('os.access')
+    def test_KillFilter_renamed_exe(self, mock_access, mock_exists,
+                                    mock_isfile, mock_readlink):
         """Makes sure renamed exe's are killed correctly."""
         command = "/bin/commandddddd"
         f = filters.KillFilter("root", command)
         usercmd = ['kill', 1234]
-        with mock.patch('os.readlink') as readlink:
-            readlink.return_value = command + ';90bfb2 (deleted)'
-            m = mock.mock_open(read_data=command)
-            with mock.patch("six.moves.builtins.open", m, create=True):
-                with mock.patch('os.path.isfile') as exists:
-                    def fake_exists(path):
-                        return path == command
-                    exists.side_effect = fake_exists
-                    self.assertTrue(f.match(usercmd))
+
+        def fake_os_func(path, *args):
+            return path == command
+
+        mock_readlink.return_value = command + ';90bfb2 (deleted)'
+        m = mock.mock_open(read_data=command)
+        with mock.patch("six.moves.builtins.open", m, create=True):
+            mock_isfile.side_effect = fake_os_func
+            mock_exists.side_effect = fake_os_func
+            mock_access.side_effect = fake_os_func
+            self.assertTrue(f.match(usercmd))
 
     def test_ReadFileFilter(self):
         goodfn = '/good/file.name'
