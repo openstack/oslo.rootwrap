@@ -27,6 +27,7 @@ import sys
 import tempfile
 import threading
 
+from oslo_rootwrap import cmd
 from oslo_rootwrap import jsonrpc
 from oslo_rootwrap import subprocess
 from oslo_rootwrap import wrapper
@@ -45,14 +46,25 @@ class RootwrapClass(object):
         self.filters = filters
 
     def run_one_command(self, userargs, stdin=None):
-        obj = wrapper.start_subprocess(
-            self.filters, userargs,
-            exec_dirs=self.config.exec_dirs,
-            log=self.config.use_syslog,
-            close_fds=True,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
+        try:
+            obj = wrapper.start_subprocess(
+                self.filters, userargs,
+                exec_dirs=self.config.exec_dirs,
+                log=self.config.use_syslog,
+                close_fds=True,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE)
+        except wrapper.FilterMatchNotExecutable:
+            LOG.warning("Executable not found for: %s",
+                        ' '.join(userargs))
+            return cmd.RC_NOEXECFOUND, "", ""
+
+        except wrapper.NoFilterMatched:
+            LOG.warning("Unauthorized command: %s (no filter matched)",
+                        ' '.join(userargs))
+            return cmd.RC_UNAUTHORIZED, "", ""
+
         if six.PY3 and stdin is not None:
             stdin = os.fsencode(stdin)
         out, err = obj.communicate(stdin)
