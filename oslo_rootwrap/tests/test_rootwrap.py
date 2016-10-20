@@ -156,7 +156,7 @@ class RootwrapTestCase(testtools.TestCase):
         # check that environment variables are set
         self.assertEqual('/some/thing', env.get('A'))
         self.assertEqual('somethingelse', env.get('B'))
-        self.assertFalse('sleep' in env.keys())
+        self.assertNotIn('sleep', env.keys())
 
     def test_EnvFilter_without_leading_env(self):
         envset = ['A=/some/thing', 'B=somethingelse']
@@ -175,7 +175,7 @@ class RootwrapTestCase(testtools.TestCase):
         # check that environment variables are set
         self.assertEqual('/some/thing', env.get('A'))
         self.assertEqual('somethingelse', env.get('B'))
-        self.assertFalse('sleep' in env.keys())
+        self.assertNotIn('sleep', env.keys())
 
     def test_KillFilter(self):
         if not os.path.exists("/proc/%d" % os.getpid()):
