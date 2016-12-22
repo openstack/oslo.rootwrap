@@ -44,6 +44,18 @@ class RootwrapLoaderTestCase(testtools.TestCase):
             self.assertEqual(["/fake/privsep-helper", "--context", "foo"],
                              filtermatch.get_command(privsep))
 
+    def test_strict_switched_off_in_configparser(self):
+        temp_dir = self.useFixture(fixtures.TempDir()).path
+        temp_file = os.path.join(temp_dir, 'test.conf')
+        f = open(temp_file, 'w')
+        f.write("""[Filters]
+privsep: PathFilter, privsep-helper, root
+privsep: PathFilter, privsep-helper, root
+""")
+        f.close()
+        filterlist = wrapper.load_filters([temp_dir])
+        self.assertIsNotNone(filterlist)
+
 
 class RootwrapTestCase(testtools.TestCase):
     if os.path.exists('/sbin/ip'):
