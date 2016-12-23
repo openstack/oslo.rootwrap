@@ -19,6 +19,7 @@ import os
 import pwd
 import signal
 
+import six
 from six import moves
 
 from oslo_rootwrap import filters
@@ -116,7 +117,8 @@ def load_filters(filters_path):
             continue
         for filterfile in filter(lambda f: not f.startswith('.'),
                                  os.listdir(filterdir)):
-            filterconfig = moves.configparser.RawConfigParser()
+            kwargs = {"strict": False} if six.PY3 else {}
+            filterconfig = moves.configparser.RawConfigParser(**kwargs)
             filterconfig.read(os.path.join(filterdir, filterfile))
             for (name, value) in filterconfig.items("Filters"):
                 filterdefinition = [s.strip() for s in value.split(',')]
