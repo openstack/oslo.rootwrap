@@ -62,7 +62,8 @@ class Client(object):
         process_obj = subprocess.Popen(self._start_command,
                                        stdin=subprocess.PIPE,
                                        stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE)
+                                       stderr=subprocess.PIPE,
+                                       close_fds=True)
         LOG.debug("Popen for %s command has been instantiated",
                   self._start_command)
 
