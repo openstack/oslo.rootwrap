@@ -39,7 +39,6 @@ class CommandFilter(object):
         exec_dirs = exec_dirs or []
         if self.real_exec is not None:
             return self.real_exec
-        self.real_exec = ""
         if os.path.isabs(self.exec_path):
             if os.access(self.exec_path, os.X_OK):
                 self.real_exec = self.exec_path
