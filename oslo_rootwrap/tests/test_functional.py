@@ -18,6 +18,7 @@ import io
 import logging
 import os
 import pwd
+import shutil
 import signal
 import sys
 import threading
@@ -44,6 +45,7 @@ class _FunctionalBase(object):
         super(_FunctionalBase, self).setUp()
         tmpdir = self.useFixture(fixtures.TempDir()).path
         self.config_file = os.path.join(tmpdir, 'rootwrap.conf')
+        self.later_cmd = os.path.join(tmpdir, 'later_install_cmd')
         filters_dir = os.path.join(tmpdir, 'filters.d')
         filters_file = os.path.join(tmpdir, 'filters.d', 'test.filters')
         os.mkdir(filters_dir)
@@ -58,7 +60,8 @@ cat: CommandFilter, /bin/cat, root
 sh: CommandFilter, /bin/sh, root
 id: CommandFilter, /usr/bin/id, nobody
 unknown_cmd: CommandFilter, /unknown/unknown_cmd, root
-""")
+later_install_cmd: CommandFilter, %s, root
+""" % self.later_cmd)
 
     def _test_run_once(self, expect_byte=True):
         code, out, err = self.execute(['echo', 'teststr'])
@@ -191,6 +194,15 @@ class RootwrapDaemonTest(_FunctionalBase, testtools.TestCase):
 
     def test_run_with_stdin(self):
         self._test_run_with_stdin(expect_byte=False)
+
+    def test_run_with_later_install_cmd(self):
+        code, out, err = self.execute(['later_install_cmd'])
+        self.assertEqual(cmd.RC_NOEXECFOUND, code)
+        # Install cmd and try again
+        shutil.copy('/bin/echo', self.later_cmd)
+        code, out, err = self.execute(['later_install_cmd'])
+        # Expect successfully run the cmd
+        self.assertEqual(0, code)
 
     def test_daemon_ressurection(self):
         # Let the client start a daemon
