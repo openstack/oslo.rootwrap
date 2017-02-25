@@ -14,9 +14,14 @@
 #    under the License.
 
 import os
-import pwd
 import re
 import shutil
+import sys
+
+if sys.platform != 'win32':
+    # NOTE(claudiub): pwd is a Linux-specific library, and currently there is
+    # no Windows support for oslo.rootwrap.
+    import pwd
 
 
 def _getuid(user):

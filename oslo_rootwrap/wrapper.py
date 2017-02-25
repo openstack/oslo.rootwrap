@@ -16,8 +16,11 @@
 import logging
 import logging.handlers
 import os
-import pwd
 import signal
+import sys
+
+if sys.platform != 'win32':
+    import pwd
 
 import six
 from six import moves
