@@ -21,6 +21,7 @@ import pwd
 import signal
 import sys
 import threading
+import time
 
 try:
     import eventlet
@@ -50,6 +51,7 @@ class _FunctionalBase(object):
         with open(self.config_file, 'w') as f:
             f.write("""[DEFAULT]
 filters_path=%s
+daemon_timeout=10
 exec_dirs=/bin""" % (filters_dir,))
         with open(filters_file, 'w') as f:
             f.write("""[Filters]
@@ -199,6 +201,15 @@ class RootwrapDaemonTest(_FunctionalBase, testtools.TestCase):
         os.kill(self.client._process.pid, signal.SIGTERM)
         # Expect client to successfully restart daemon and run simple request
         self.test_run_once()
+
+    def test_daemon_timeout(self):
+        # Let the client start a daemon
+        self.execute(['echo'])
+        # Make daemon timeout
+        with mock.patch.object(self.client, '_restart') as restart:
+            time.sleep(15)
+            self.execute(['echo'])
+            restart.assert_called_once()
 
     def _exec_thread(self, fifo_path):
         try:

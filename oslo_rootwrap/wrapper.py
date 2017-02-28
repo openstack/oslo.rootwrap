@@ -87,6 +87,12 @@ class RootwrapConfig(object):
         else:
             self.use_syslog = False
 
+        # daemon_timeout
+        if config.has_option("DEFAULT", "daemon_timeout"):
+            self.daemon_timeout = int(config.get("DEFAULT", "daemon_timeout"))
+        else:
+            self.daemon_timeout = 600
+
 
 def setup_syslog(execname, facility, level):
     rootwrap_logger = logging.getLogger()
