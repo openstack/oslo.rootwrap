@@ -120,9 +120,12 @@ def load_filters(filters_path):
             continue
         for filterfile in filter(lambda f: not f.startswith('.'),
                                  os.listdir(filterdir)):
+            filterfilepath = os.path.join(filterdir, filterfile)
+            if not os.path.isfile(filterfilepath):
+                continue
             kwargs = {"strict": False} if six.PY3 else {}
             filterconfig = moves.configparser.RawConfigParser(**kwargs)
-            filterconfig.read(os.path.join(filterdir, filterfile))
+            filterconfig.read(filterfilepath)
             for (name, value) in filterconfig.items("Filters"):
                 filterdefinition = [s.strip() for s in value.split(',')]
                 newfilter = build_filter(*filterdefinition)

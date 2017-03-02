@@ -46,6 +46,7 @@ class RootwrapLoaderTestCase(testtools.TestCase):
 
     def test_strict_switched_off_in_configparser(self):
         temp_dir = self.useFixture(fixtures.TempDir()).path
+        os.mkdir(os.path.join(temp_dir, 'nested'))
         temp_file = os.path.join(temp_dir, 'test.conf')
         f = open(temp_file, 'w')
         f.write("""[Filters]
