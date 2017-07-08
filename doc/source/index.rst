@@ -8,20 +8,11 @@ as `root` from OpenStack services.
 .. toctree::
    :maxdepth: 2
 
-   installation
-   usage
-   contributing
+   install/index
+   user/index
+   contributor/index
 
-Release Notes
-=============
-
-.. toctree::
-   :maxdepth: 1
-
-   history
-
-Indices and tables
-==================
+.. rubric:: Indices and tables
 
 * :ref:`genindex`
 * :ref:`modindex`
