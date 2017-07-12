@@ -23,6 +23,6 @@ oslo.rootwrap allows fine-grained filtering of shell commands to run
 as `root` from OpenStack services.
 
 * License: Apache License, Version 2.0
-* Documentation: http://docs.openstack.org/developer/oslo.rootwrap
-* Source: http://git.openstack.org/cgit/openstack/oslo.rootwrap
-* Bugs: http://bugs.launchpad.net/oslo.rootwrap
+* Documentation: https://docs.openstack.org/oslo.rootwrap/latest/
+* Source: https://git.openstack.org/cgit/openstack/oslo.rootwrap
+* Bugs: https://bugs.launchpad.net/oslo.rootwrap
