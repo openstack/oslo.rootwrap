@@ -653,6 +653,7 @@ class DaemonCleanupTestCase(testtools.TestCase):
     @mock.patch('tempfile.mkdtemp')
     @mock.patch('multiprocessing.managers.BaseManager.get_server',
                 side_effect=DaemonCleanupException)
-    def test_daemon_no_cleanup_for_uninitialized_server(self, gs, *args):
+    def test_daemon_no_cleanup_for_uninitialized_server(self, gs, mkd, *args):
+        mkd.return_value = '/tmp/123'
         self.assertRaises(DaemonCleanupException, daemon.daemon_start,
                           config=None, filters=None)
