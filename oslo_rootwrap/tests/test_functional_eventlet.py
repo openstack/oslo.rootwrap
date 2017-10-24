@@ -25,3 +25,35 @@ if os.environ.get('TEST_EVENTLET', False):
         def assert_unpatched(self):
             # This test case is specifically for eventlet testing
             pass
+
+        def _thread_worker(self, seconds, msg):
+            code, out, err = self.execute(
+                ['sh', '-c', 'sleep %d; echo %s' % (seconds, msg)])
+            # Ignore trailing newline
+            self.assertEqual(msg, out.rstrip())
+
+        def _thread_worker_timeout(self, seconds, msg, timeout):
+            with eventlet.Timeout(timeout):
+                try:
+                    self._thread_worker(seconds, msg)
+                except eventlet.Timeout:
+                    pass
+
+        def test_eventlet_threads(self):
+            """Check eventlet compatibility.
+
+            The multiprocessing module is not eventlet friendly and
+            must be protected against eventlet thread switching and its
+            timeout exceptions.
+            """
+            th = []
+            # 10 was not enough for some reason.
+            for i in range(15):
+                th.append(
+                    eventlet.spawn(self._thread_worker, i % 3, 'abc%d' % i))
+            for i in [5, 17, 20, 25]:
+                th.append(
+                    eventlet.spawn(self._thread_worker_timeout, 2,
+                                   'timeout%d' % i, i))
+            for thread in th:
+                thread.wait()
