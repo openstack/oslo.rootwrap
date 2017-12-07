@@ -15,6 +15,7 @@
 import logging
 import logging.handlers
 import os
+import tempfile
 import uuid
 
 import fixtures
@@ -511,7 +512,8 @@ class PathFilterTestCase(testtools.TestCase):
     def setUp(self):
         super(PathFilterTestCase, self).setUp()
 
-        tmpdir = fixtures.TempDir('/tmp')
+        self.tmp_root_dir = tempfile.mkdtemp()
+        tmpdir = fixtures.TempDir(self.tmp_root_dir)
         self.useFixture(tmpdir)
 
         self.f = filters.PathFilter('/bin/chown', 'root', 'nova', tmpdir.path)
@@ -519,7 +521,7 @@ class PathFilterTestCase(testtools.TestCase):
         gen_name = lambda: str(uuid.uuid4())
 
         self.SIMPLE_FILE_WITHIN_DIR = os.path.join(tmpdir.path, 'some')
-        self.SIMPLE_FILE_OUTSIDE_DIR = os.path.join('/tmp', 'some')
+        self.SIMPLE_FILE_OUTSIDE_DIR = os.path.join(self.tmp_root_dir, 'some')
         self.TRAVERSAL_WITHIN_DIR = os.path.join(tmpdir.path, 'a', '..',
                                                  'some')
         self.TRAVERSAL_OUTSIDE_DIR = os.path.join(tmpdir.path, '..', 'some')
@@ -538,7 +540,8 @@ class PathFilterTestCase(testtools.TestCase):
         os.symlink(os.path.join(tmpdir.path, 'a'), self.SYMLINK_WITHIN_DIR)
 
         self.SYMLINK_OUTSIDE_DIR = os.path.join(tmpdir.path, gen_name())
-        os.symlink(os.path.join('/tmp', 'some_file'), self.SYMLINK_OUTSIDE_DIR)
+        os.symlink(os.path.join(self.tmp_root_dir, 'some_file'),
+                   self.SYMLINK_OUTSIDE_DIR)
 
     def test_empty_args(self):
         self.assertFalse(self.f.match([]))
@@ -551,12 +554,13 @@ class PathFilterTestCase(testtools.TestCase):
         self.assertTrue(f.match(args))
 
     def test_argument_equality_constraint(self):
-        f = filters.PathFilter('/bin/chown', 'root', 'nova', '/tmp/spam/eggs')
+        temp_file_path = os.path.join(self.tmp_root_dir, 'spam/eggs')
+        f = filters.PathFilter('/bin/chown', 'root', 'nova', temp_file_path)
 
-        args = ['chown', 'nova', '/tmp/spam/eggs']
+        args = ['chown', 'nova', temp_file_path]
         self.assertTrue(f.match(args))
 
-        args = ['chown', 'quantum', '/tmp/spam/eggs']
+        args = ['chown', 'quantum', temp_file_path]
         self.assertFalse(f.match(args))
 
     def test_wrong_arguments_number(self):
@@ -654,6 +658,6 @@ class DaemonCleanupTestCase(testtools.TestCase):
     @mock.patch('multiprocessing.managers.BaseManager.get_server',
                 side_effect=DaemonCleanupException)
     def test_daemon_no_cleanup_for_uninitialized_server(self, gs, mkd, *args):
-        mkd.return_value = '/tmp/123'
+        mkd.return_value = '/just_dir/123'
         self.assertRaises(DaemonCleanupException, daemon.daemon_start,
                           config=None, filters=None)

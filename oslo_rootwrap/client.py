@@ -116,7 +116,8 @@ class Client(object):
 
     def _restart(self, proxy):
         with self._mutex:
-            assert self._initialized
+            if not self._initialized:
+                raise AssertionError("Client should be initialized.")
             # Verify if someone has already restarted this.
             if self._proxy is proxy:
                 self._finalize()
