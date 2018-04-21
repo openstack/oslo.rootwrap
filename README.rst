@@ -12,11 +12,11 @@ Team and repository tags
 ===============================================
 
 .. image:: https://img.shields.io/pypi/v/oslo.rootwrap.svg
-    :target: https://pypi.python.org/pypi/oslo.rootwrap/
+    :target: https://pypi.org/project/oslo.rootwrap/
     :alt: Latest Version
 
 .. image:: https://img.shields.io/pypi/dm/oslo.rootwrap.svg
-    :target: https://pypi.python.org/pypi/oslo.rootwrap/
+    :target: https://pypi.org/project/oslo.rootwrap/
     :alt: Downloads
 
 oslo.rootwrap allows fine-grained filtering of shell commands to run
