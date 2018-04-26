@@ -18,6 +18,10 @@ import re
 import shutil
 import sys
 
+NETNS_VARS = ('net', 'netn', 'netns')
+EXEC_VARS = ('e', 'ex', 'exe', 'exec')
+
+
 if sys.platform != 'win32':
     # NOTE(claudiub): pwd is a Linux-specific library, and currently there is
     # no Windows support for oslo.rootwrap.
@@ -274,8 +278,8 @@ class IpFilter(CommandFilter):
         if userargs[0] == 'ip':
             # Avoid the 'netns exec' command here
             for a, b in zip(userargs[1:], userargs[2:]):
-                if a == 'netns':
-                    return (b != 'exec')
+                if a in NETNS_VARS:
+                    return b not in EXEC_VARS
             else:
                 return True
 
@@ -373,7 +377,8 @@ class IpNetnsExecFilter(ChainingFilter):
         if self.run_as != "root" or len(userargs) < 4:
             return False
 
-        return (userargs[:3] == ['ip', 'netns', 'exec'])
+        return (userargs[0] == 'ip' and userargs[1] in NETNS_VARS
+                and userargs[2] in EXEC_VARS)
 
     def exec_args(self, userargs):
         args = userargs[4:]
