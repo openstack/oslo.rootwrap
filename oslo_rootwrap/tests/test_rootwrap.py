@@ -328,6 +328,8 @@ class RootwrapTestCase(testtools.TestCase):
         self.assertFalse(f.match(['ip', 'netns', 'exec']))
         self.assertFalse(f.match(['ip', '-s', 'netns', 'exec']))
         self.assertFalse(f.match(['ip', '-l', '42', 'netns', 'exec']))
+        self.assertFalse(f.match(['ip', 'net', 'exec', 'foo']))
+        self.assertFalse(f.match(['ip', 'netns', 'e', 'foo']))
 
     def _test_IpFilter_netns_helper(self, action):
         f = filters.IpFilter(self._ip, 'root')
@@ -346,10 +348,19 @@ class RootwrapTestCase(testtools.TestCase):
         f = filters.IpNetnsExecFilter(self._ip, 'root')
         self.assertTrue(
             f.match(['ip', 'netns', 'exec', 'foo', 'ip', 'link', 'list']))
+        self.assertTrue(f.match(['ip', 'net', 'exec', 'foo', 'bar']))
+        self.assertTrue(f.match(['ip', 'netn', 'e', 'foo', 'bar']))
+        self.assertTrue(f.match(['ip', 'net', 'e', 'foo', 'bar']))
+        self.assertTrue(f.match(['ip', 'net', 'exe', 'foo', 'bar']))
 
     def test_IpNetnsExecFilter_nomatch(self):
         f = filters.IpNetnsExecFilter(self._ip, 'root')
         self.assertFalse(f.match(['ip', 'link', 'list']))
+        self.assertFalse(f.match(['ip', 'foo', 'bar', 'netns']))
+        self.assertFalse(f.match(['ip', '-s', 'netns', 'exec']))
+        self.assertFalse(f.match(['ip', '-l', '42', 'netns', 'exec']))
+        self.assertFalse(f.match(['ip', 'netns exec', 'foo', 'bar', 'baz']))
+        self.assertFalse(f.match([]))
 
         # verify that at least a NS is given
         self.assertFalse(f.match(['ip', 'netns', 'exec']))
