@@ -26,3 +26,4 @@ as `root` from OpenStack services.
 * Documentation: https://docs.openstack.org/oslo.rootwrap/latest/
 * Source: https://git.openstack.org/cgit/openstack/oslo.rootwrap
 * Bugs: https://bugs.launchpad.net/oslo.rootwrap
+* Release notes: https://docs.openstack.org/releasenotes/oslo.rootwrap/
