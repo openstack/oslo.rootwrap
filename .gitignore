@@ -12,7 +12,7 @@ build/
 doc/build/
 doc/source/api/
 dist/
-.testrepository/
+.stestr/
 .project
 .pydevproject
 
