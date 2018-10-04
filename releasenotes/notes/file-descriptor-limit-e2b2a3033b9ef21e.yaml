@@ -1,0 +1,13 @@
+---
+features:
+  - |
+    A configurable limit on the number of file descriptors that can be opened
+    by a rootwrap-started process has been added. It defaults to disabled, but
+    can be adjusted by setting the ``rlimit_nofile`` option in rootwrap.conf
+    to a larger or smaller value.
+upgrade:
+  - |
+    For OpenStack Rocky and older, the functionality is disabled by default.
+    Users affected by the original issue and would like to make use of it
+    can optionally enable it by setting the ``rlimit_nofile`` option in
+    rootwrap.conf to a value of 1024 or higher.

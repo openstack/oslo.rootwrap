@@ -33,11 +33,19 @@
 from __future__ import print_function
 
 import logging
+import os
 import sys
+
+from oslo_rootwrap import subprocess
+from oslo_rootwrap import wrapper
 
 from six import moves
 
-from oslo_rootwrap import wrapper
+try:
+    # This isn't available on all platforms (e.g. Windows).
+    import resource
+except ImportError:
+    resource = None
 
 RC_UNAUTHORIZED = 99
 RC_NOCOMMAND = 98
@@ -82,6 +90,36 @@ def main(run_daemon=False):
     except moves.configparser.Error:
         _exit_error(execname, "Incorrect configuration file: %s" % configfile,
                     RC_BADCONFIG, log=False)
+
+    if resource:
+        # When use close_fds=True on Python 2.x, calling subprocess with
+        # close_fds=True (which we do by default) can be inefficient when
+        # the current fd ulimits are large, because it blindly closes
+        # all fds in the range(1, $verylargenumber)
+
+        # Lower our ulimit to a reasonable value to regain performance.
+        fd_limits = resource.getrlimit(resource.RLIMIT_NOFILE)
+        sensible_fd_limit = min(config.rlimit_nofile, fd_limits[0])
+        if (sensible_fd_limit > 0 and fd_limits[0] > sensible_fd_limit):
+            # Close any fd beyond sensible_fd_limit prior adjusting our
+            # rlimit to ensure all fds are closed
+            for fd_entry in os.listdir('/proc/self/fd'):
+                # NOTE(dmllr): In a previous patch revision non-numeric
+                # dir entries were silently ignored which reviewers
+                # didn't like. Readd exception handling when it occurs.
+                fd = int(fd_entry)
+                if fd >= sensible_fd_limit:
+                    os.close(fd)
+            # Unfortunately this inherits to our children, so allow them to
+            # re-raise by passing through the hard limit unmodified
+            resource.setrlimit(
+                resource.RLIMIT_NOFILE, (sensible_fd_limit, fd_limits[1]))
+            # This is set on import to the hard ulimit. if its defined we
+            # already have imported it, so we need to update it to the new
+            # limit
+            if (hasattr(subprocess, 'MAXFD') and
+                    subprocess.MAXFD > sensible_fd_limit):
+                subprocess.MAXFD = sensible_fd_limit
 
     if config.use_syslog:
         wrapper.setup_syslog(execname,

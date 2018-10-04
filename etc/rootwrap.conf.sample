@@ -28,3 +28,8 @@ syslog_log_level=ERROR
 
 # Rootwrap daemon exits after this seconds of inactivity
 daemon_timeout=600
+
+# Rootwrap daemon limits itself to that many file descriptors (Linux only)
+# Set to -1 for disabling (which is the default).
+# rlimit_nofile=1024
+rlimit_nofile=-1

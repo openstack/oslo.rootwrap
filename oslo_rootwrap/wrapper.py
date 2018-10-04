@@ -97,6 +97,12 @@ class RootwrapConfig(object):
         else:
             self.daemon_timeout = 600
 
+        # fd ulimit
+        if config.has_option("DEFAULT", "rlimit_nofile"):
+            self.rlimit_nofile = int(config.get("DEFAULT", "rlimit_nofile"))
+        else:
+            self.rlimit_nofile = -1
+
 
 def setup_syslog(execname, facility, level):
     try:
