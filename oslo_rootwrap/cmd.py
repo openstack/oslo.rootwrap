@@ -33,11 +33,13 @@
 from __future__ import print_function
 
 import logging
+import resource
 import sys
 
-from six import moves
-
+from oslo_rootwrap import subprocess
 from oslo_rootwrap import wrapper
+
+from six import moves
 
 RC_UNAUTHORIZED = 99
 RC_NOCOMMAND = 98
@@ -82,6 +84,22 @@ def main(run_daemon=False):
     except moves.configparser.Error:
         _exit_error(execname, "Incorrect configuration file: %s" % configfile,
                     RC_BADCONFIG, log=False)
+
+    # When use close_fds=True on Python 2.x, we spend significant time
+    # in closing fds up to current soft ulimit, which could be large.
+    # Lower our ulimit to a reasonable value to regain performance.
+    fd_limits = resource.getrlimit(resource.RLIMIT_NOFILE)
+    sensible_fd_limit = min(config.rlimit_nofile, fd_limits[0])
+    if (fd_limits[0] > sensible_fd_limit):
+        # Unfortunately this inherits to our children, so allow them to
+        # re-raise by passing through the hard limit unmodified
+        resource.setrlimit(
+            resource.RLIMIT_NOFILE, (sensible_fd_limit, fd_limits[1]))
+        # This is set on import to the hard ulimit. if its defined we
+        # already have imported it, so we need to update it to the new limit
+        if (hasattr(subprocess, 'MAXFD') and
+                subprocess.MAXFD > sensible_fd_limit):
+            subprocess.MAXFD = sensible_fd_limit
 
     if config.use_syslog:
         wrapper.setup_syslog(execname,
