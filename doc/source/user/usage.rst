@@ -114,11 +114,13 @@ syslog_log_level
     ``syslog_log_level=ERROR``
 
 rlimit_nofile
-    Which rlimit for number of open file descriptors should be set for rootwrap
-    and its children processes by default. This is useful in case there is a
+    Specify rlimit for number of open file descriptors used by oslo rootwrap
+    and its child processes by default. This is useful in case there is a
     excessively large ulimit configured for the calling process that shouldn't
     inherit to oslo.rootwrap and its called processes. Will not attempt to raise
     the limit. Defaults to 1024.
+
+    Ignored on platforms that do not provide "/proc/self/fd" (e.g. non-Linux).
 
 
 .filters files

@@ -33,6 +33,7 @@
 from __future__ import print_function
 
 import logging
+import os
 import sys
 
 from oslo_rootwrap import subprocess
@@ -91,12 +92,24 @@ def main(run_daemon=False):
                     RC_BADCONFIG, log=False)
 
     if resource:
-        # When use close_fds=True on Python 2.x, we spend significant time
-        # in closing fds up to current soft ulimit, which could be large.
+        # When use close_fds=True on Python 2.x, calling subprocess with
+        # close_fds=True (which we do by default) can be inefficient when
+        # the current fd ulimits are large, because it blindly closes
+        # all fds in the range(1, $verylargenumber)
+
         # Lower our ulimit to a reasonable value to regain performance.
         fd_limits = resource.getrlimit(resource.RLIMIT_NOFILE)
         sensible_fd_limit = min(config.rlimit_nofile, fd_limits[0])
         if (fd_limits[0] > sensible_fd_limit):
+            # Close any fd beyond sensible_fd_limit prior adjusting our
+            # rlimit to ensure all fds are closed
+            for fd_entry in os.listdir('/proc/self/fd'):
+                # NOTE(dmllr): In a previous patch revision non-numeric
+                # dir entries were silently ignored which reviewers
+                # didn't like. Readd exception handling when it occurs.
+                fd = int(fd_entry)
+                if fd >= sensible_fd_limit:
+                    os.close(fd)
             # Unfortunately this inherits to our children, so allow them to
             # re-raise by passing through the hard limit unmodified
             resource.setrlimit(
