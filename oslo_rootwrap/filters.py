@@ -325,8 +325,8 @@ class EnvFilter(CommandFilter):
         user_command = userargs[len(user_envs):len(user_envs) + 1]
 
         # match first non-env argument with CommandFilter
-        return (super(EnvFilter, self).match(user_command)
-                and len(filter_envs) and user_envs == filter_envs)
+        return (super(EnvFilter, self).match(user_command) and
+                len(filter_envs) and user_envs == filter_envs)
 
     def exec_args(self, userargs):
         args = userargs[:]
@@ -377,8 +377,8 @@ class IpNetnsExecFilter(ChainingFilter):
         if self.run_as != "root" or len(userargs) < 4:
             return False
 
-        return (userargs[0] == 'ip' and userargs[1] in NETNS_VARS
-                and userargs[2] in EXEC_VARS)
+        return (userargs[0] == 'ip' and userargs[1] in NETNS_VARS and
+                userargs[2] in EXEC_VARS)
 
     def exec_args(self, userargs):
         args = userargs[4:]

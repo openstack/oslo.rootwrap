@@ -19,14 +19,14 @@ import os
 import signal
 import sys
 
-if sys.platform != 'win32':
-    import pwd
-
 import six
 from six import moves
 
 from oslo_rootwrap import filters
 from oslo_rootwrap import subprocess
+
+if sys.platform != 'win32':
+    import pwd
 
 
 class NoFilterMatched(Exception):
@@ -73,8 +73,8 @@ class RootwrapConfig(object):
         if config.has_option("DEFAULT", "syslog_log_level"):
             v = config.get("DEFAULT", "syslog_log_level")
             level = v.upper()
-            if (hasattr(logging, '_nameToLevel')
-               and level in logging._nameToLevel):
+            if (hasattr(logging, '_nameToLevel') and
+               level in logging._nameToLevel):
                 # Workaround a regression of Python 3.4.0 bug fixed in 3.4.2:
                 # http://bugs.python.org/issue22386
                 self.syslog_log_level = logging._nameToLevel[level]
@@ -177,8 +177,8 @@ def match_filter(filter_list, userargs, exec_dirs=None):
                 # This command calls exec verify that remaining args
                 # matches another filter.
                 def non_chain_filter(fltr):
-                    return (fltr.run_as == f.run_as
-                            and not isinstance(fltr, filters.ChainingFilter))
+                    return (fltr.run_as == f.run_as and
+                            not isinstance(fltr, filters.ChainingFilter))
 
                 leaf_filters = [fltr for fltr in filter_list
                                 if non_chain_filter(fltr)]
