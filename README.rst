@@ -24,6 +24,6 @@ as `root` from OpenStack services.
 
 * License: Apache License, Version 2.0
 * Documentation: https://docs.openstack.org/oslo.rootwrap/latest/
-* Source: https://git.openstack.org/cgit/openstack/oslo.rootwrap
+* Source: https://opendev.org/openstack/oslo.rootwrap
 * Bugs: https://bugs.launchpad.net/oslo.rootwrap
 * Release notes: https://docs.openstack.org/releasenotes/oslo.rootwrap/
