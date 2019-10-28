@@ -85,6 +85,15 @@ class Client(object):
                             (stderr,))
         LOG.info("Spawned new rootwrap daemon process with pid=%d",
                  process_obj.pid)
+
+        def wait_process():
+            return_code = process_obj.wait()
+            LOG.info("Rootwrap daemon process exit with status: %d",
+                     return_code)
+
+        reap_process = threading.Thread(target=wait_process)
+        reap_process.daemon = True
+        reap_process.start()
         self._manager = ClientManager(socket_path, authkey)
         self._manager.connect()
         self._proxy = self._manager.rootwrap()
