@@ -1,0 +1,11 @@
+---
+fixes:
+  - |
+    Reap the rootwrap daemon process after it is timeout and quit. When the
+    daemon process is timeout, it will kill itself. But the parent doesn't reap
+    it. Fixed this behaviour by adding a thread to wait the process to be done
+    once the daemon is started.
+
+    More info please refer the LP #1850241 [1].
+
+    [1] https://bugs.launchpad.net/oslo.rootwrap/+bug/1850241
