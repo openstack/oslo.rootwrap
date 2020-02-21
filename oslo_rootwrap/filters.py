@@ -33,6 +33,19 @@ def _getuid(user):
     return pwd.getpwnam(user).pw_uid
 
 
+def realpath(path):
+    """Return the real absolute path.
+
+    If the execution directory does not exist, os.getcwd() raises a
+    FileNotFoundError exception. In this case, unset the exception and return
+    an empty string.
+    """
+    try:
+        return os.path.realpath(path)
+    except FileNotFoundError:
+        return ''
+
+
 class CommandFilter(object):
     """Command filter only checking that the 1st argument matches exec_path."""
 
@@ -128,7 +141,7 @@ class PathFilter(CommandFilter):
             if not os.path.isabs(arg)  # arguments not specifying abs paths
         )
         paths_are_within_base_dirs = all(
-            os.path.commonprefix([arg, os.path.realpath(value)]) == arg
+            os.path.commonprefix([arg, realpath(value)]) == arg
             for arg, value in zip(self.args, arguments)
             if os.path.isabs(arg)  # arguments specifying abs paths
         )
@@ -143,7 +156,7 @@ class PathFilter(CommandFilter):
         command, arguments = userargs[0], userargs[1:]
 
         # convert path values to canonical ones; copy other args as is
-        args = [os.path.realpath(value) if os.path.isabs(arg) else value
+        args = [realpath(value) if os.path.isabs(arg) else value
                 for arg, value in zip(self.args, arguments)]
 
         return super(PathFilter, self).get_command([command] + args,
