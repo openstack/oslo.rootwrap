@@ -16,10 +16,10 @@ import logging
 import logging.handlers
 import os
 import tempfile
+from unittest import mock
 import uuid
 
 import fixtures
-import mock
 from six import moves
 import testtools
 

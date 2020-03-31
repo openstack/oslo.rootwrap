@@ -23,6 +23,7 @@ import signal
 import sys
 import threading
 import time
+from unittest import mock
 
 try:
     import eventlet
@@ -30,7 +31,6 @@ except ImportError:
     eventlet = None
 
 import fixtures
-import mock
 import six
 import testtools
 from testtools import content
