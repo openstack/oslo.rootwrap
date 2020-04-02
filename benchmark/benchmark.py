@@ -63,6 +63,7 @@ def run_one(runner, cmd):
         assert code == 0, "Command failed"
     return __inner
 
+
 runners = [
     ("{0}", run_plain),
     ("sudo {0}", run_sudo),
@@ -108,6 +109,7 @@ def main():
     run_sudo(["ip", "netns", "add", "bench_ns"])
     atexit.register(run_sudo, ["ip", "netns", "delete", "bench_ns"])
     run_bench('ip netns exec bench_ns ip a'.split(), runners[1:])
+
 
 if __name__ == "__main__":
     main()

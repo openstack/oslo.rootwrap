@@ -96,6 +96,7 @@ class JsonListener(object):
     def get_accepted(self):
         return self._accepted
 
+
 if hasattr(managers.Server, 'accepter'):
     # In Python 3 accepter() thread has infinite loop. We break it with
     # EOFError, so we should silence this error here.
@@ -118,10 +119,10 @@ class JsonConnection(object):
         self._socket.sendall(s)
 
     def recv_bytes(self, maxsize=None):
-        l = struct.unpack('!Q', self.recvall(8))[0]
-        if maxsize is not None and l > maxsize:
+        item = struct.unpack('!Q', self.recvall(8))[0]
+        if maxsize is not None and item > maxsize:
             raise RuntimeError("Too big message received")
-        s = self.recvall(l)
+        s = self.recvall(item)
         return s
 
     def send(self, obj):

@@ -49,6 +49,7 @@ class nonclosing(object):
     def close(self):
         pass
 
+
 log_format = ("%(asctime)s | [%(process)5s]+%(levelname)5s | "
               "%(message)s")
 if __name__ == '__main__':

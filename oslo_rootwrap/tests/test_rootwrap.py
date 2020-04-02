@@ -398,7 +398,7 @@ class RootwrapTestCase(testtools.TestCase):
 
     def test_ChainingRegExpFilter_match(self):
         filter_list = [filters.ChainingRegExpFilter('nice', 'root',
-                                                    'nice', '-?\d+'),
+                                                    'nice', r'-?\d+'),
                        filters.CommandFilter('cat', 'root')]
         args = ['nice', '5', 'cat', '/a']
         dirs = ['/bin', '/usr/bin']
@@ -407,7 +407,7 @@ class RootwrapTestCase(testtools.TestCase):
 
     def test_ChainingRegExpFilter_not_match(self):
         filter_list = [filters.ChainingRegExpFilter('nice', 'root',
-                                                    'nice', '-?\d+'),
+                                                    'nice', r'-?\d+'),
                        filters.CommandFilter('cat', 'root')]
         args_invalid = (['nice', '5', 'ls', '/a'],
                         ['nice', '--5', 'cat', '/a'],
