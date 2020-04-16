@@ -5,6 +5,9 @@
 oslo.rootwrap allows fine-grained filtering of shell commands to run
 as `root` from OpenStack services.
 
+Contents
+========
+
 .. toctree::
    :maxdepth: 2
 
@@ -12,7 +15,14 @@ as `root` from OpenStack services.
    user/index
    contributor/index
 
-.. rubric:: Indices and tables
+Release Notes
+=============
+
+Read also the `oslo.rootwrap Release Notes
+<https://docs.openstack.org/releasenotes/oslo.rootwrap/>`_.
+
+Indices and tables
+==================
 
 * :ref:`genindex`
 * :ref:`modindex`
