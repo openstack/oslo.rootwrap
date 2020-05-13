@@ -17,6 +17,7 @@ import logging
 from multiprocessing import managers
 from multiprocessing import util as mp_util
 import threading
+import time
 import weakref
 
 import oslo_rootwrap
@@ -41,6 +42,7 @@ except AttributeError:
 
 ClientManager = daemon.get_manager_class()
 LOG = logging.getLogger(__name__)
+SHUTDOWN_RETRIES = 3
 
 
 class Client(object):
@@ -108,10 +110,14 @@ class Client(object):
         if process.poll() is None:
             LOG.info('Stopping rootwrap daemon process with pid=%s',
                      process.pid)
-            try:
-                manager.rootwrap().shutdown()
-            except (EOFError, IOError):
-                pass  # assume it is dead already
+            for _ in range(SHUTDOWN_RETRIES):
+                try:
+                    manager.rootwrap().shutdown()
+                    break
+                except (EOFError, IOError):
+                    break  # assume it is dead already
+                except RuntimeError:
+                    time.sleep(0.2)
             # We might want to wait for process to exit or kill it, but we
             # can't provide sane timeout on 2.x and we most likely don't have
             # permisions to do so
