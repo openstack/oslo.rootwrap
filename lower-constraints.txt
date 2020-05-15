@@ -16,7 +16,6 @@ Jinja2==2.10
 keystoneauth1==3.4.0
 linecache2==1.0.0
 MarkupSafe==1.0
-mccabe==0.2.1
 mox3==0.20.0
 openstackdocstheme==1.20.0
 os-client-config==1.28.0
