@@ -27,9 +27,9 @@ extensions = [
 ]
 
 # openstackdocstheme options
-repository_name = 'openstack/oslo.rootwrap'
-bug_project = 'oslo.rootwrap'
-bug_tag = ''
+openstackdocs_repo_name = 'openstack/oslo.rootwrap'
+openstackdocs_bug_project = 'oslo.rootwrap'
+openstackdocs_bug_tag = ''
 
 # autodoc generation is a bit aggressive and a nuisance when doing heavy
 # text edit cycles.
