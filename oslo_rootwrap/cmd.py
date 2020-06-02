@@ -30,8 +30,6 @@
    they are needed, to avoid allowing more than is necessary.
 """
 
-from __future__ import print_function
-
 import logging
 import os
 import sys
