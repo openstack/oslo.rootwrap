@@ -9,7 +9,7 @@ extras==1.0.0
 fixtures==3.0.0
 gitdb==0.6.4
 GitPython==1.0.1
-greenlet==0.4.10
+greenlet==0.4.15
 imagesize==0.7.1
 iso8601==0.1.11
 Jinja2==2.10
@@ -24,7 +24,7 @@ Pygments==2.2.0
 python-mimeparse==1.6.0
 python-subunit==1.0.0
 pytz==2013.6
-PyYAML==3.12
+PyYAML==3.13
 reno==3.1.0
 requests==2.14.2
 requestsexceptions==1.2.0
