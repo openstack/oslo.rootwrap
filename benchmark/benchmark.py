@@ -16,7 +16,6 @@
 import atexit
 import math
 import os
-import six
 import subprocess
 import sys
 import timeit
@@ -33,9 +32,8 @@ def run_plain(cmd):
                            stdout=subprocess.PIPE,
                            stderr=subprocess.PIPE)
     out, err = obj.communicate()
-    if six.PY3:
-        out = os.fsdecode(out)
-        err = os.fsdecode(err)
+    out = os.fsdecode(out)
+    err = os.fsdecode(err)
     return obj.returncode, out, err
 
 

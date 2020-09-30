@@ -19,7 +19,6 @@ import os
 import signal
 import sys
 
-import six
 from six import moves
 
 from oslo_rootwrap import filters
@@ -142,7 +141,7 @@ def load_filters(filters_path):
             filterfilepath = os.path.join(filterdir, filterfile)
             if not os.path.isfile(filterfilepath):
                 continue
-            kwargs = {"strict": False} if six.PY3 else {}
+            kwargs = {"strict": False}
             filterconfig = moves.configparser.RawConfigParser(**kwargs)
             filterconfig.read(filterfilepath)
             for (name, value) in filterconfig.items("Filters"):

@@ -19,7 +19,6 @@ from multiprocessing import managers
 import os
 import shutil
 import signal
-import six
 import stat
 import sys
 import tempfile
@@ -67,12 +66,11 @@ class RootwrapClass(object):
                         ' '.join(userargs))
             return cmd.RC_UNAUTHORIZED, "", ""
 
-        if six.PY3 and stdin is not None:
+        if stdin is not None:
             stdin = os.fsencode(stdin)
         out, err = obj.communicate(stdin)
-        if six.PY3:
-            out = os.fsdecode(out)
-            err = os.fsdecode(err)
+        out = os.fsdecode(out)
+        err = os.fsdecode(err)
         return obj.returncode, out, err
 
     @classmethod
