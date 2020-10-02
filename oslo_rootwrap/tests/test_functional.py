@@ -31,9 +31,9 @@ except ImportError:
     eventlet = None
 
 import fixtures
-import six
 import testtools
 from testtools import content
+
 
 from oslo_rootwrap import client
 from oslo_rootwrap import cmd
@@ -159,7 +159,7 @@ class RootwrapDaemonTest(_FunctionalBase, testtools.TestCase):
         self.addCleanup(p.stop)
 
         # Collect client logs
-        client_log = six.StringIO()
+        client_log = io.StringIO()
         handler = logging.StreamHandler(client_log)
         log_format = run_daemon.log_format.replace('+', ' ')
         handler.setFormatter(logging.Formatter(log_format))

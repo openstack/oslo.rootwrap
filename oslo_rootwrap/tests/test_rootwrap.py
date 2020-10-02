@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import configparser
 import logging
 import logging.handlers
 import os
@@ -20,7 +21,6 @@ from unittest import mock
 import uuid
 
 import fixtures
-from six import moves
 import testtools
 
 from oslo_rootwrap import cmd
@@ -299,7 +299,7 @@ class RootwrapTestCase(testtools.TestCase):
 
         mock_readlink.return_value = command + ';90bfb2 (deleted)'
         m = mock.mock_open(read_data=command)
-        with mock.patch("six.moves.builtins.open", m, create=True):
+        with mock.patch("builtins.open", m, create=True):
             mock_isfile.side_effect = fake_os_func
             mock_exists.side_effect = fake_os_func
             mock_access.side_effect = fake_os_func
@@ -454,10 +454,10 @@ class RootwrapTestCase(testtools.TestCase):
         self.assertTrue(filtermatch is self.filters[-1])
 
     def test_RootwrapConfig(self):
-        raw = moves.configparser.RawConfigParser()
+        raw = configparser.RawConfigParser()
 
         # Empty config should raise configparser.Error
-        self.assertRaises(moves.configparser.Error,
+        self.assertRaises(configparser.Error,
                           wrapper.RootwrapConfig, raw)
 
         # Check default values

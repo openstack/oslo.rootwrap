@@ -13,13 +13,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import configparser
 import logging
 import logging.handlers
 import os
 import signal
 import sys
-
-from six import moves
 
 from oslo_rootwrap import filters
 from oslo_rootwrap import subprocess
@@ -142,7 +141,7 @@ def load_filters(filters_path):
             if not os.path.isfile(filterfilepath):
                 continue
             kwargs = {"strict": False}
-            filterconfig = moves.configparser.RawConfigParser(**kwargs)
+            filterconfig = configparser.RawConfigParser(**kwargs)
             filterconfig.read(filterfilepath)
             for (name, value) in filterconfig.items("Filters"):
                 filterdefinition = [s.strip() for s in value.split(',')]

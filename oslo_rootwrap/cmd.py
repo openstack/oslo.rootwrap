@@ -29,15 +29,13 @@
    Service packaging should deploy .filters files only on nodes where
    they are needed, to avoid allowing more than is necessary.
 """
-
+import configparser
 import logging
 import os
 import sys
 
 from oslo_rootwrap import subprocess
 from oslo_rootwrap import wrapper
-
-from six import moves
 
 try:
     # This isn't available on all platforms (e.g. Windows).
@@ -79,13 +77,13 @@ def main(run_daemon=False):
 
     # Load configuration
     try:
-        rawconfig = moves.configparser.RawConfigParser()
+        rawconfig = configparser.RawConfigParser()
         rawconfig.read(configfile)
         config = wrapper.RootwrapConfig(rawconfig)
     except ValueError as exc:
         msg = "Incorrect value in %s: %s" % (configfile, exc.args[0])
         _exit_error(execname, msg, RC_BADCONFIG, log=False)
-    except moves.configparser.Error:
+    except configparser.Error:
         _exit_error(execname, "Incorrect configuration file: %s" % configfile,
                     RC_BADCONFIG, log=False)
 
