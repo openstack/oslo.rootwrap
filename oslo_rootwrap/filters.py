@@ -74,7 +74,11 @@ class CommandFilter(object):
 
     def match(self, userargs):
         """Only check that the first argument (command) matches exec_path."""
-        return userargs and os.path.basename(self.exec_path) == userargs[0]
+        if userargs:
+            base_path_matches = os.path.basename(self.exec_path) == userargs[0]
+            exact_path_matches = self.exec_path == userargs[0]
+            return exact_path_matches or base_path_matches
+        return False
 
     def preexec(self):
         """Setuid in subprocess right before command is invoked."""

@@ -89,6 +89,14 @@ later_install_cmd: CommandFilter, %s, root
         self.assertEqual(expect_out, out)
         self.assertEqual(expect_err, err)
 
+    def test_run_with_path(self):
+        code, out, err = self.execute(['/bin/echo', 'teststr'])
+        self.assertEqual(0, code)
+
+    def test_run_with_bogus_path(self):
+        code, out, err = self.execute(['/home/bob/bin/echo', 'teststr'])
+        self.assertEqual(cmd.RC_UNAUTHORIZED, code)
+
     def test_run_command_not_found(self):
         code, out, err = self.execute(['unknown_cmd'])
         self.assertEqual(cmd.RC_NOEXECFOUND, code)
