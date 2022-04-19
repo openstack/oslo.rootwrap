@@ -59,7 +59,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-copyright = u'2016, oslo.rootwrap Developers'
+copyright = '2016, oslo.rootwrap Developers'
 
 # Release notes do not need a version in the title, they span
 # multiple versions.
@@ -195,8 +195,8 @@ htmlhelp_basename = 'oslo.rootwrapReleaseNotesDoc'
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     ('index', 'oslo.rootwrapReleaseNotes.tex',
-     u'oslo.rootwrap Release Notes Documentation',
-     u'oslo.rootwrap Developers', 'manual'),
+     'oslo.rootwrap Release Notes Documentation',
+     'oslo.rootwrap Developers', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -226,8 +226,8 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'oslo.rootwrapReleaseNotes',
-     u'oslo.rootwrap Release Notes Documentation',
-     [u'oslo.rootwrap Developers'], 1)
+     'oslo.rootwrap Release Notes Documentation',
+     ['oslo.rootwrap Developers'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -241,8 +241,8 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     ('index', 'oslo.rootwrapReleaseNotes',
-     u'oslo.rootwrap Release Notes Documentation',
-     u'oslo.rootwrap Developers', 'oslo.rootwrapReleaseNotes',
+     'oslo.rootwrap Release Notes Documentation',
+     'oslo.rootwrap Developers', 'oslo.rootwrapReleaseNotes',
      'Allows fine-grained filtering of shell commands to run as root from'
      ' OpenStack services.',
      'Miscellaneous'),
