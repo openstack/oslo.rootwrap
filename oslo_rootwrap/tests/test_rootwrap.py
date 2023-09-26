@@ -200,6 +200,7 @@ class RootwrapTestCase(testtools.TestCase):
         try:
             f = filters.KillFilter("root", "/bin/cat", "-9", "-HUP")
             f2 = filters.KillFilter("root", "/usr/bin/cat", "-9", "-HUP")
+            f3 = filters.KillFilter("root", "/usr/bin/coreutils", "-9", "-HUP")
             usercmd = ['kill', '-ALRM', p.pid]
             # Incorrect signal should fail
             self.assertFalse(f.match(usercmd) or f2.match(usercmd))
@@ -208,10 +209,13 @@ class RootwrapTestCase(testtools.TestCase):
             self.assertFalse(f.match(usercmd) or f2.match(usercmd))
             # Providing matching signal should be allowed
             usercmd = ['kill', '-9', p.pid]
-            self.assertTrue(f.match(usercmd) or f2.match(usercmd))
+            self.assertTrue(f.match(usercmd) or
+                            f2.match(usercmd) or
+                            f3.match(usercmd))
 
             f = filters.KillFilter("root", "/bin/cat")
             f2 = filters.KillFilter("root", "/usr/bin/cat")
+            f3 = filters.KillFilter("root", "/usr/bin/coreutils")
             usercmd = ['kill', os.getpid()]
             # Our own PID does not match /bin/sleep, so it should fail
             self.assertFalse(f.match(usercmd) or f2.match(usercmd))
@@ -220,16 +224,19 @@ class RootwrapTestCase(testtools.TestCase):
             self.assertFalse(f.match(usercmd) or f2.match(usercmd))
             usercmd = ['kill', p.pid]
             # Providing no signal should work
-            self.assertTrue(f.match(usercmd) or f2.match(usercmd))
+            self.assertTrue(f.match(usercmd) or
+                            f2.match(usercmd) or
+                            f3.match(usercmd))
 
             # verify that relative paths are matched against $PATH
             f = filters.KillFilter("root", "cat")
+            f2 = filters.KillFilter("root", "coreutils")
             # Our own PID does not match so it should fail
             usercmd = ['kill', os.getpid()]
             self.assertFalse(f.match(usercmd))
             # Filter should find cat in /bin or /usr/bin
             usercmd = ['kill', p.pid]
-            self.assertTrue(f.match(usercmd))
+            self.assertTrue(f.match(usercmd) or f2.match(usercmd))
             # Filter shouldn't be able to find binary in $PATH, so fail
             with fixtures.EnvironmentVariable("PATH", "/foo:/bar"):
                 self.assertFalse(f.match(usercmd))
