@@ -111,11 +111,11 @@ later_install_cmd: CommandFilter, %s, root
 
         # Should run as 'nobody'
         code, out, err = self.execute(['id', '-u'])
-        self.assertEqual('%s\n' % pwd.getpwnam('nobody').pw_uid, out)
+        self.assertEqual(pwd.getpwnam('nobody').pw_uid, int(out.strip()))
 
         # Should run as 'root'
         code, out, err = self.execute(['sh', '-c', 'id -u'])
-        self.assertEqual('0\n', out)
+        self.assertEqual(0, int(out.strip()))
 
 
 class RootwrapTest(_FunctionalBase, testtools.TestCase):
