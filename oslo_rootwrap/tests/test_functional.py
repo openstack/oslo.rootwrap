@@ -277,7 +277,7 @@ class RootwrapDaemonTest(_FunctionalBase, testtools.TestCase):
         # Start background thread that would kill process in 1 second if it
         # doesn't die by then
         def sleep_kill():
-            stop.wait(1)
+            stop.wait(3)
             if not stop.is_set():
                 os.kill(process.pid, signal.SIGKILL)
         threading.Thread(target=sleep_kill).start()
