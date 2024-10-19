@@ -45,7 +45,7 @@ LOG = logging.getLogger(__name__)
 SHUTDOWN_RETRIES = 3
 
 
-class Client(object):
+class Client:
     def __init__(self, rootwrap_daemon_cmd):
         self._start_command = rootwrap_daemon_cmd
         self._initialized = False
@@ -114,7 +114,7 @@ class Client(object):
                 try:
                     manager.rootwrap().shutdown()
                     break
-                except (EOFError, IOError):
+                except (EOFError, OSError):
                     break  # assume it is dead already
                 except RuntimeError:
                     time.sleep(0.2)
@@ -167,7 +167,7 @@ class Client(object):
                 proxy = self._restart(proxy)
             try:
                 res = self._run_one_command(proxy, cmd, stdin)
-            except (EOFError, IOError):
+            except (EOFError, OSError):
                 retry = True
             # res can be None if we received final None sent by dying
             # server thread instead of response to our

@@ -39,7 +39,7 @@ def forwarding_popen(f, old_popen=subprocess.Popen):
     return popen
 
 
-class nonclosing(object):
+class nonclosing:
     def __init__(self, f):
         self._f = f
 

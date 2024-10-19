@@ -66,7 +66,7 @@ class RootwrapTestCase(testtools.TestCase):
         _ip = '/bin/ip'
 
     def setUp(self):
-        super(RootwrapTestCase, self).setUp()
+        super().setUp()
         self.filters = [
             filters.RegExpFilter("/bin/ls", "root", 'ls', '/[a-z]+'),
             filters.CommandFilter("/usr/bin/foo_bar_not_exist", "root"),
@@ -528,7 +528,7 @@ class RootwrapTestCase(testtools.TestCase):
 
 class PathFilterTestCase(testtools.TestCase):
     def setUp(self):
-        super(PathFilterTestCase, self).setUp()
+        super().setUp()
 
         self.tmp_root_dir = tempfile.mkdtemp()
         tmpdir = fixtures.TempDir(self.tmp_root_dir)
