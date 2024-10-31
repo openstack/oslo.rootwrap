@@ -41,9 +41,9 @@ from oslo_rootwrap import subprocess
 from oslo_rootwrap.tests import run_daemon
 
 
-class _FunctionalBase(object):
+class _FunctionalBase:
     def setUp(self):
-        super(_FunctionalBase, self).setUp()
+        super().setUp()
         tmpdir = self.useFixture(fixtures.TempDir()).path
         self.config_file = os.path.join(tmpdir, 'rootwrap.conf')
         self.later_cmd = os.path.join(tmpdir, 'later_install_cmd')
@@ -52,9 +52,9 @@ class _FunctionalBase(object):
         os.mkdir(filters_dir)
         with open(self.config_file, 'w') as f:
             f.write("""[DEFAULT]
-filters_path=%s
+filters_path={}
 daemon_timeout=10
-exec_dirs=/bin""" % (filters_dir,))
+exec_dirs=/bin""".format(filters_dir))
         with open(filters_file, 'w') as f:
             f.write("""[Filters]
 echo: CommandFilter, /bin/echo, root
@@ -120,7 +120,7 @@ later_install_cmd: CommandFilter, %s, root
 
 class RootwrapTest(_FunctionalBase, testtools.TestCase):
     def setUp(self):
-        super(RootwrapTest, self).setUp()
+        super().setUp()
         self.cmd = [
             sys.executable, '-c',
             'from oslo_rootwrap import cmd; cmd.main()',
@@ -157,7 +157,7 @@ class RootwrapDaemonTest(_FunctionalBase, testtools.TestCase):
     def setUp(self):
         self.assert_unpatched()
 
-        super(RootwrapDaemonTest, self).setUp()
+        super().setUp()
 
         # Collect daemon logs
         daemon_log = io.BytesIO()

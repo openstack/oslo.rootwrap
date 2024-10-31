@@ -40,7 +40,7 @@ class RpcJSONEncoder(json.JSONEncoder):
         # Other errors will fail to pass JSON encoding and will be visible on
         # client side
         else:
-            return super(RpcJSONEncoder, self).default(o)
+            return super().default(o)
 
 
 # Parse whatever RpcJSONEncoder supplied us with
@@ -57,7 +57,7 @@ def rpc_object_hook(obj):
         return obj
 
 
-class JsonListener(object):
+class JsonListener:
     def __init__(self, address, backlog=1):
         self.address = address
         self._socket = socket.socket(socket.AF_UNIX)
@@ -65,7 +65,7 @@ class JsonListener(object):
             self._socket.setblocking(True)
             self._socket.bind(address)
             self._socket.listen(backlog)
-        except socket.error:
+        except OSError:
             self._socket.close()
             raise
         self.closed = False
@@ -75,7 +75,7 @@ class JsonListener(object):
         while True:
             try:
                 s, _ = self._socket.accept()
-            except socket.error as e:
+            except OSError as e:
                 if e.errno in (errno.EINVAL, errno.EBADF):
                     raise EOFError
                 elif e.errno != errno.EINTR:
@@ -109,7 +109,7 @@ if hasattr(managers.Server, 'accepter'):
     managers.Server.accepter = silent_accepter
 
 
-class JsonConnection(object):
+class JsonConnection:
     def __init__(self, sock):
         sock.setblocking(True)
         self._socket = sock
@@ -190,7 +190,7 @@ class JsonClient(JsonConnection):
         sock = socket.socket(socket.AF_UNIX)
         sock.setblocking(True)
         sock.connect(address)
-        super(JsonClient, self).__init__(sock)
+        super().__init__(sock)
         if authkey is not None:
             connection.answer_challenge(self, authkey)
             connection.deliver_challenge(self, authkey)

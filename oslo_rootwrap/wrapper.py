@@ -38,7 +38,7 @@ class FilterMatchNotExecutable(Exception):
         self.match = match
 
 
-class RootwrapConfig(object):
+class RootwrapConfig:
 
     def __init__(self, config):
         # filters_path
@@ -106,7 +106,7 @@ def setup_syslog(execname, facility, level):
     try:
         handler = logging.handlers.SysLogHandler(address='/dev/log',
                                                  facility=facility)
-    except IOError:
+    except OSError:
         logging.warning("Unable to setup syslog, maybe /dev/log socket needs "
                         "to be restarted. Ignoring syslog configuration "
                         "options.")
@@ -218,7 +218,7 @@ def start_subprocess(filter_list, userargs, exec_dirs=[], log=False, **kwargs):
 
     command = filtermatch.get_command(userargs, exec_dirs)
     if log:
-        logging.info("(%s > %s) Executing %s (filter match = %s)" % (
+        logging.info("({} > {}) Executing {} (filter match = {})".format(
             _getlogin(), pwd.getpwuid(os.getuid())[0],
             command, filtermatch.name))
 

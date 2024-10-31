@@ -46,7 +46,7 @@ def realpath(path):
         return ''
 
 
-class CommandFilter(object):
+class CommandFilter:
     """Command filter only checking that the 1st argument matches exec_path."""
 
     def __init__(self, exec_path, run_as, *args):
@@ -138,7 +138,7 @@ class PathFilter(CommandFilter):
         arguments = userargs[1:]
 
         equal_args_num = len(self.args) == len(arguments)
-        exec_is_valid = super(PathFilter, self).match(userargs)
+        exec_is_valid = super().match(userargs)
         args_equal_or_pass = all(
             arg == 'pass' or arg == value
             for arg, value in zip(self.args, arguments)
@@ -163,8 +163,8 @@ class PathFilter(CommandFilter):
         args = [realpath(value) if os.path.isabs(arg) else value
                 for arg, value in zip(self.args, arguments)]
 
-        return super(PathFilter, self).get_command([command] + args,
-                                                   exec_dirs)
+        return super().get_command([command] + args,
+                                   exec_dirs)
 
 
 class KillFilter(CommandFilter):
@@ -180,7 +180,7 @@ class KillFilter(CommandFilter):
     """
 
     def __init__(self, *args):
-        super(KillFilter, self).__init__("/bin/kill", *args)
+        super().__init__("/bin/kill", *args)
 
     @staticmethod
     def _program_path(command):
@@ -209,7 +209,7 @@ class KillFilter(CommandFilter):
 
         try:
             command = os.readlink("/proc/%d/exe" % int(pid))
-        except (ValueError, EnvironmentError):
+        except (ValueError, OSError):
             # Incorrect PID
             return None
 
@@ -241,7 +241,7 @@ class KillFilter(CommandFilter):
             # as that will allow killing a process where the exe
             # has been removed from the system rather than updated.
             return command
-        except EnvironmentError:
+        except OSError:
             return None
 
     def match(self, userargs):
@@ -282,7 +282,7 @@ class ReadFileFilter(CommandFilter):
 
     def __init__(self, file_path, *args):
         self.file_path = file_path
-        super(ReadFileFilter, self).__init__("/bin/cat", "root", *args)
+        super().__init__("/bin/cat", "root", *args)
 
     def match(self, userargs):
         return (userargs == ['cat', self.file_path])
@@ -319,7 +319,7 @@ class EnvFilter(CommandFilter):
         return envs
 
     def __init__(self, exec_path, run_as, *args):
-        super(EnvFilter, self).__init__(exec_path, run_as, *args)
+        super().__init__(exec_path, run_as, *args)
 
         env_list = self._extract_env(self.args)
         # Set exec_path to X when args are in the form of
@@ -342,7 +342,7 @@ class EnvFilter(CommandFilter):
         user_command = userargs[len(user_envs):len(user_envs) + 1]
 
         # match first non-env argument with CommandFilter
-        return (super(EnvFilter, self).match(user_command) and
+        return (super().match(user_command) and
                 len(filter_envs) and user_envs == filter_envs)
 
     def exec_args(self, userargs):

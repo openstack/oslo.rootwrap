@@ -38,7 +38,7 @@ LOG = logging.getLogger(__name__)
 managers.listener_client['jsonrpc'] = jsonrpc.JsonListener, jsonrpc.JsonClient
 
 
-class RootwrapClass(object):
+class RootwrapClass:
     def __init__(self, config, filters):
         self.config = config
         self.filters = filters
@@ -115,8 +115,8 @@ def get_manager_class(config=None, filters=None):
     class RootwrapManager(managers.BaseManager):
         def __init__(self, address=None, authkey=None):
             # Force jsonrpc because neither pickle nor xmlrpclib is secure
-            super(RootwrapManager, self).__init__(address, authkey,
-                                                  serializer='jsonrpc')
+            super().__init__(address, authkey,
+                             serializer='jsonrpc')
 
     if config is not None:
         partial_class = functools.partial(RootwrapClass, config, filters)
