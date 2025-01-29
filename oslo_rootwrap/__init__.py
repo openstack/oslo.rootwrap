@@ -15,6 +15,8 @@
 
 import os
 
+import debtcollector
+
 try:
     import eventlet.patcher
 except ImportError:
@@ -27,4 +29,8 @@ else:
 if not _patched_socket:
     import subprocess
 else:
+    debtcollector.deprecate(
+        "Eventlet support is deprecated "
+        "and will be soon no longer supported. "
+        "Please migrate your code and stop monkey patching your environment.")
     from eventlet.green import subprocess   # noqa
