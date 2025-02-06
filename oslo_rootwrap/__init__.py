@@ -30,7 +30,5 @@ if not _patched_socket:
     import subprocess
 else:
     debtcollector.deprecate(
-        "Eventlet support is deprecated "
-        "and will be soon no longer supported. "
-        "Please migrate your code and stop monkey patching your environment.")
+        "Eventlet support is deprecated and will be soon removed.")
     from eventlet.green import subprocess   # noqa
