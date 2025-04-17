@@ -71,13 +71,7 @@ class RootwrapConfig:
         if config.has_option("DEFAULT", "syslog_log_level"):
             v = config.get("DEFAULT", "syslog_log_level")
             level = v.upper()
-            if (hasattr(logging, '_nameToLevel') and
-               level in logging._nameToLevel):
-                # Workaround a regression of Python 3.4.0 bug fixed in 3.4.2:
-                # http://bugs.python.org/issue22386
-                self.syslog_log_level = logging._nameToLevel[level]
-            else:
-                self.syslog_log_level = logging.getLevelName(level)
+            self.syslog_log_level = logging.getLevelName(level)
             if (self.syslog_log_level == "Level %s" % level):
                 raise ValueError('Unexpected syslog_log_level: %r' % v)
         else:
