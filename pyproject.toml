@@ -1,3 +1,42 @@
 [build-system]
 requires = ["pbr>=6.1.1"]
 build-backend = "pbr.build"
+
+[project]
+name = "oslo.rootwrap"
+description = "Oslo Rootwrap"
+readme = "README.rst"
+authors = [
+    {name = "OpenStack", email = "openstack-discuss@lists.openstack.org"},
+]
+requires-python = ">=3.10"
+dynamic = ["version", "dependencies"]
+classifiers = [
+    "Environment :: OpenStack",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: Implementation :: CPython",
+]
+
+[project.urls]
+homepage = "https://docs.openstack.org/oslo.rootwrap/latest/"
+
+[project.scripts]
+oslo-rootwrap = "oslo_rootwrap.cmd:main"
+oslo-rootwrap-daemon = "oslo_rootwrap.cmd:daemon"
+
+[tool.pbr]
+packages = ["oslo_rootwrap"]
+
+[tool.setuptools.packages.find]
+include = ["oslo_rootwrap*"]
+exclude = ["releasenotes*"]
