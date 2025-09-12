@@ -28,15 +28,12 @@ classifiers = [
 ]
 
 [project.urls]
-homepage = "https://docs.openstack.org/oslo.rootwrap/latest/"
+Homepage = "https://docs.openstack.org/oslo.rootwrap"
+Repository = "https://opendev.org/openstack/oslo.rootwrap"
 
 [project.scripts]
 oslo-rootwrap = "oslo_rootwrap.cmd:main"
 oslo-rootwrap-daemon = "oslo_rootwrap.cmd:daemon"
 
-[tool.pbr]
+[tool.setuptools]
 packages = ["oslo_rootwrap"]
-
-[tool.setuptools.packages.find]
-include = ["oslo_rootwrap*"]
-exclude = ["releasenotes*"]
