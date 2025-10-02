@@ -37,3 +37,7 @@ oslo-rootwrap-daemon = "oslo_rootwrap.cmd:daemon"
 
 [tool.setuptools]
 packages = ["oslo_rootwrap"]
+
+[tool.bandit]
+exclude_dirs = ["tests", "benchmark"]
+skips = ['B404']

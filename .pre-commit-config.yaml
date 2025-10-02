@@ -27,7 +27,7 @@ repos:
     rev: 1.7.10
     hooks:
       - id: bandit
-        args: ['-x', 'tests,benchmark', '--skip', 'B404']
+        args: ['-c', 'pyproject.toml']
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.18.0
     hooks:
