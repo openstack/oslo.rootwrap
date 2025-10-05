@@ -51,7 +51,7 @@ SIGNAL_BASE = 128
 
 
 def _exit_error(execname, message, errorcode, log=True):
-    print("{}: {}".format(execname, message), file=sys.stderr)
+    print(f"{execname}: {message}", file=sys.stderr)
     if log:
         logging.error(message)
     sys.exit(errorcode)
@@ -81,7 +81,7 @@ def main(run_daemon=False):
         rawconfig.read(configfile)
         config = wrapper.RootwrapConfig(rawconfig)
     except ValueError as exc:
-        msg = "Incorrect value in {}: {}".format(configfile, exc.args[0])
+        msg = f"Incorrect value in {configfile}: {exc.args[0]}"
         _exit_error(execname, msg, RC_BADCONFIG, log=False)
     except configparser.Error:
         _exit_error(execname, "Incorrect configuration file: %s" % configfile,

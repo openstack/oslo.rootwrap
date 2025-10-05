@@ -70,17 +70,17 @@ runners = [
 
 def get_time_string(sec):
     if sec > 0.9:
-        return "{:7.3f}s ".format(sec)
+        return f"{sec:7.3f}s "
     elif sec > 0.0009:
-        return "{:7.3f}ms".format(sec * 1000.0)
+        return f"{sec * 1000.0:7.3f}ms"
     else:
-        return "{:7.3f}us".format(sec * 1000000.0)
+        return f"{sec * 1000000.0:7.3f}us"
 
 
 def run_bench(cmd, runners):
     strcmd = ' '.join(cmd)
     max_name_len = max(len(name) for name, _ in runners) + len(strcmd) - 3
-    print("Running '{}':".format(strcmd))
+    print(f"Running '{strcmd}':")
     print("{0:^{1}} :".format("method", max_name_len),
           "".join(map("{:^10}".format, ["min", "avg", "max", "dev"])))
     for name, runner in runners:
