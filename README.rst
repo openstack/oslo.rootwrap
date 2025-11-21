@@ -1,15 +1,10 @@
-========================
-Team and repository tags
-========================
+=============================================
+oslo.rootwrap -- Escalated Permission Control
+=============================================
 
 .. image:: https://governance.openstack.org/tc/badges/oslo.rootwrap.svg
-    :target: https://governance.openstack.org/tc/reference/tags/index.html
 
 .. Change things from this point on
-
-===============================================
- oslo.rootwrap -- Escalated Permission Control
-===============================================
 
 .. image:: https://img.shields.io/pypi/v/oslo.rootwrap.svg
     :target: https://pypi.org/project/oslo.rootwrap/
