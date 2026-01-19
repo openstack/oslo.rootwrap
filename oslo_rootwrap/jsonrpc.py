@@ -35,8 +35,10 @@ class RpcJSONEncoder(json.JSONEncoder):
         if isinstance(o, wrapper.NoFilterMatched):
             return {"__exception__": "NoFilterMatched"}
         elif isinstance(o, wrapper.FilterMatchNotExecutable):
-            return {"__exception__": "FilterMatchNotExecutable",
-                    "match": o.match}
+            return {
+                "__exception__": "FilterMatchNotExecutable",
+                "match": o.match,
+            }
         # Other errors will fail to pass JSON encoding and will be visible on
         # client side
         else:
@@ -105,6 +107,7 @@ if hasattr(managers.Server, 'accepter'):
             old_accepter(self)
         except EOFError:
             pass
+
     old_accepter = managers.Server.accepter
     managers.Server.accepter = silent_accepter
 
@@ -179,8 +182,9 @@ class JsonConnection:
             pass
         else:
             # In Python 2 json returns unicode while multiprocessing needs str
-            if (kind in ("#TRACEBACK", "#UNSERIALIZABLE") and
-                    not isinstance(res[1], str)):
+            if kind in ("#TRACEBACK", "#UNSERIALIZABLE") and not isinstance(
+                res[1], str
+            ):
                 res[1] = res[1].encode('utf-8', 'replace')
         return res
 

@@ -27,10 +27,12 @@ num_iterations = 100
 
 
 def run_plain(cmd):
-    obj = subprocess.Popen(cmd,
-                           stdin=subprocess.PIPE,
-                           stdout=subprocess.PIPE,
-                           stderr=subprocess.PIPE)
+    obj = subprocess.Popen(
+        cmd,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
     out, err = obj.communicate()
     out = os.fsdecode(out)
     err = os.fsdecode(err)
@@ -42,14 +44,27 @@ def run_sudo(cmd):
 
 
 def run_rootwrap(cmd):
-    return run_plain([
-        "sudo", sys.executable, "-c",
-        "from oslo_rootwrap import cmd; cmd.main()", config_path] + cmd)
+    return run_plain(
+        [
+            "sudo",
+            sys.executable,
+            "-c",
+            "from oslo_rootwrap import cmd; cmd.main()",
+            config_path,
+        ]
+        + cmd
+    )
 
 
-run_daemon = client.Client([
-    "sudo", sys.executable, "-c",
-    "from oslo_rootwrap import cmd; cmd.daemon()", config_path]).execute
+run_daemon = client.Client(
+    [
+        "sudo",
+        sys.executable,
+        "-c",
+        "from oslo_rootwrap import cmd; cmd.daemon()",
+        config_path,
+    ]
+).execute
 
 
 def run_one(runner, cmd):
@@ -57,6 +72,7 @@ def run_one(runner, cmd):
         code, out, err = runner(cmd)
         assert err == "", "Stderr not empty:\n" + err
         assert code == 0, "Command failed"
+
     return __inner
 
 
@@ -81,17 +97,22 @@ def run_bench(cmd, runners):
     strcmd = ' '.join(cmd)
     max_name_len = max(len(name) for name, _ in runners) + len(strcmd) - 3
     print(f"Running '{strcmd}':")
-    print("{0:^{1}} :".format("method", max_name_len),
-          "".join(map("{:^10}".format, ["min", "avg", "max", "dev"])))
+    print(
+        "{0:^{1}} :".format("method", max_name_len),
+        "".join(map("{:^10}".format, ["min", "avg", "max", "dev"])),
+    )
     for name, runner in runners:
-        results = timeit.repeat(run_one(runner, cmd), repeat=num_iterations,
-                                number=1)
+        results = timeit.repeat(
+            run_one(runner, cmd), repeat=num_iterations, number=1
+        )
         avg = sum(results) / num_iterations
         min_ = min(results)
         max_ = max(results)
         dev = math.sqrt(sum((r - avg) ** 2 for r in results) / num_iterations)
-        print("{0:>{1}} :".format(name.format(strcmd), max_name_len),
-              " ".join(map(get_time_string, [min_, avg, max_, dev])))
+        print(
+            "{0:>{1}} :".format(name.format(strcmd), max_name_len),
+            " ".join(map(get_time_string, [min_, avg, max_, dev])),
+        )
 
 
 def main():

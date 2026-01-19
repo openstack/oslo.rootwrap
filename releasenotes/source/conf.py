@@ -193,9 +193,13 @@ htmlhelp_basename = 'oslo.rootwrapReleaseNotesDoc'
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    ('index', 'oslo.rootwrapReleaseNotes.tex',
-     'oslo.rootwrap Release Notes Documentation',
-     'oslo.rootwrap Developers', 'manual'),
+    (
+        'index',
+        'oslo.rootwrapReleaseNotes.tex',
+        'oslo.rootwrap Release Notes Documentation',
+        'oslo.rootwrap Developers',
+        'manual',
+    ),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -224,9 +228,13 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'oslo.rootwrapReleaseNotes',
-     'oslo.rootwrap Release Notes Documentation',
-     ['oslo.rootwrap Developers'], 1)
+    (
+        'index',
+        'oslo.rootwrapReleaseNotes',
+        'oslo.rootwrap Release Notes Documentation',
+        ['oslo.rootwrap Developers'],
+        1,
+    )
 ]
 
 # If true, show URL addresses after external links.
@@ -239,12 +247,16 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    ('index', 'oslo.rootwrapReleaseNotes',
-     'oslo.rootwrap Release Notes Documentation',
-     'oslo.rootwrap Developers', 'oslo.rootwrapReleaseNotes',
-     'Allows fine-grained filtering of shell commands to run as root from'
-     ' OpenStack services.',
-     'Miscellaneous'),
+    (
+        'index',
+        'oslo.rootwrapReleaseNotes',
+        'oslo.rootwrap Release Notes Documentation',
+        'oslo.rootwrap Developers',
+        'oslo.rootwrapReleaseNotes',
+        'Allows fine-grained filtering of shell commands to run as root from'
+        ' OpenStack services.',
+        'Miscellaneous',
+    ),
 ]
 
 # Documents to append as an appendix to all manuals.

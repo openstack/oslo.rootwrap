@@ -101,11 +101,11 @@ class RegExpFilter(CommandFilter):
 
     def match(self, userargs):
         # Early skip if command or number of args don't match
-        if (not userargs or len(self.args) != len(userargs)):
+        if not userargs or len(self.args) != len(userargs):
             # DENY: argument numbers don't match
             return False
         # Compare each arg (anchoring pattern explicitly at end of string)
-        for (pattern, arg) in zip(self.args, userargs):
+        for pattern, arg in zip(self.args, userargs):
             try:
                 if not re.match(pattern + '$', arg):
                     # DENY: Some arguments did not match
@@ -120,14 +120,14 @@ class RegExpFilter(CommandFilter):
 class PathFilter(CommandFilter):
     """Command filter checking that path arguments are within given dirs
 
-        One can specify the following constraints for command arguments:
-            1) pass     - pass an argument as is to the resulting command
-            2) some_str - check if an argument is equal to the given string
-            3) abs path - check if a path argument is within the given base dir
+    One can specify the following constraints for command arguments:
+        1) pass     - pass an argument as is to the resulting command
+        2) some_str - check if an argument is equal to the given string
+        3) abs path - check if a path argument is within the given base dir
 
-        A typical rootwrapper filter entry looks like this:
-            # cmdname: filter name, raw command, user, arg_i_constraint [, ...]
-            chown: PathFilter, /bin/chown, root, nova, /var/lib/images
+    A typical rootwrapper filter entry looks like this:
+        # cmdname: filter name, raw command, user, arg_i_constraint [, ...]
+        chown: PathFilter, /bin/chown, root, nova, /var/lib/images
 
     """
 
@@ -150,33 +150,36 @@ class PathFilter(CommandFilter):
             if os.path.isabs(arg)  # arguments specifying abs paths
         )
 
-        return (equal_args_num and
-                exec_is_valid and
-                args_equal_or_pass and
-                paths_are_within_base_dirs)
+        return (
+            equal_args_num
+            and exec_is_valid
+            and args_equal_or_pass
+            and paths_are_within_base_dirs
+        )
 
     def get_command(self, userargs, exec_dirs=None):
         exec_dirs = exec_dirs or []
         command, arguments = userargs[0], userargs[1:]
 
         # convert path values to canonical ones; copy other args as is
-        args = [realpath(value) if os.path.isabs(arg) else value
-                for arg, value in zip(self.args, arguments)]
+        args = [
+            realpath(value) if os.path.isabs(arg) else value
+            for arg, value in zip(self.args, arguments)
+        ]
 
-        return super().get_command([command] + args,
-                                   exec_dirs)
+        return super().get_command([command] + args, exec_dirs)
 
 
 class KillFilter(CommandFilter):
     """Specific filter for the kill calls.
 
-       1st argument is the user to run /bin/kill under
-       2nd argument is the location of the affected executable
-           if the argument is not absolute, it is checked against $PATH
-       Subsequent arguments list the accepted signals (if any)
+    1st argument is the user to run /bin/kill under
+    2nd argument is the location of the affected executable
+        if the argument is not absolute, it is checked against $PATH
+    Subsequent arguments list the accepted signals (if any)
 
-       This filter relies on /proc to accurately determine affected
-       executable, so it will only work on procfs-capable systems (not OSX).
+    This filter relies on /proc to accurately determine affected
+    executable, so it will only work on procfs-capable systems (not OSX).
     """
 
     def __init__(self, *args):
@@ -208,7 +211,7 @@ class KillFilter(CommandFilter):
         """Determine the program associated with pid"""
 
         try:
-            command = os.readlink("/proc/%d/exe" % int(pid))
+            command = os.readlink(f"/proc/{int(pid)}/exe")
         except (ValueError, OSError):
             # Incorrect PID
             return None
@@ -221,7 +224,7 @@ class KillFilter(CommandFilter):
         # NOTE(dprince): /proc/PID/exe may have ' (deleted)' on
         # the end if an executable is updated or deleted
         if command.endswith(" (deleted)"):
-            command = command[:-len(" (deleted)")]
+            command = command[: -len(" (deleted)")]
 
         if os.path.isfile(command):
             return command
@@ -230,7 +233,7 @@ class KillFilter(CommandFilter):
         # a ';......' or '.#prelink#......' suffix etc.
         # So defer to /proc/PID/cmdline in that case.
         try:
-            with open("/proc/%d/cmdline" % int(pid)) as pfile:
+            with open(f"/proc/{int(pid)}/cmdline") as pfile:
                 cmdline = pfile.read().partition('\0')[0]
 
             cmdline = self._program_path(cmdline)
@@ -271,10 +274,12 @@ class KillFilter(CommandFilter):
         if os.path.isabs(kill_command):
             return kill_command == command
 
-        return (os.path.isabs(command) and
-                kill_command == os.path.basename(command) and
-                os.path.dirname(command) in os.environ.get('PATH', ''
-                                                           ).split(':'))
+        return (
+            os.path.isabs(command)
+            and kill_command == os.path.basename(command)
+            and os.path.dirname(command)
+            in os.environ.get('PATH', '').split(':')
+        )
 
 
 class ReadFileFilter(CommandFilter):
@@ -285,7 +290,7 @@ class ReadFileFilter(CommandFilter):
         super().__init__("/bin/cat", "root", *args)
 
     def match(self, userargs):
-        return (userargs == ['cat', self.file_path])
+        return userargs == ['cat', self.file_path]
 
 
 class IpFilter(CommandFilter):
@@ -339,11 +344,14 @@ class EnvFilter(CommandFilter):
         # extract all env args
         user_envs = self._extract_env(userargs)
         filter_envs = self._extract_env(self.args)
-        user_command = userargs[len(user_envs):len(user_envs) + 1]
+        user_command = userargs[len(user_envs) : len(user_envs) + 1]
 
         # match first non-env argument with CommandFilter
-        return (super().match(user_command) and
-                len(filter_envs) and user_envs == filter_envs)
+        return (
+            super().match(user_command)
+            and len(filter_envs)
+            and user_envs == filter_envs
+        )
 
     def exec_args(self, userargs):
         args = userargs[:]
@@ -394,8 +402,11 @@ class IpNetnsExecFilter(ChainingFilter):
         if self.run_as != "root" or len(userargs) < 4:
             return False
 
-        return (userargs[0] == 'ip' and userargs[1] in NETNS_VARS and
-                userargs[2] in EXEC_VARS)
+        return (
+            userargs[0] == 'ip'
+            and userargs[1] in NETNS_VARS
+            and userargs[2] in EXEC_VARS
+        )
 
     def exec_args(self, userargs):
         args = userargs[4:]
@@ -413,10 +424,10 @@ class ChainingRegExpFilter(ChainingFilter):
 
     def match(self, userargs):
         # Early skip if number of args is smaller than the filter
-        if (not userargs or len(self.args) > len(userargs)):
+        if not userargs or len(self.args) > len(userargs):
             return False
         # Compare each arg (anchoring pattern explicitly at end of string)
-        for (pattern, arg) in zip(self.args, userargs):
+        for pattern, arg in zip(self.args, userargs):
             try:
                 if not re.match(pattern + '$', arg):
                     # DENY: Some arguments did not match
@@ -428,7 +439,7 @@ class ChainingRegExpFilter(ChainingFilter):
         return True
 
     def exec_args(self, userargs):
-        args = userargs[len(self.args):]
+        args = userargs[len(self.args) :]
         if args:
             args[0] = os.path.basename(args[0])
         return args

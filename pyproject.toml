@@ -38,6 +38,15 @@ oslo-rootwrap-daemon = "oslo_rootwrap.cmd:daemon"
 [tool.setuptools]
 packages = ["oslo_rootwrap"]
 
-[tool.bandit]
-exclude_dirs = ["tests", "benchmark"]
-skips = ['B404']
+[tool.ruff]
+line-length = 79
+
+[tool.ruff.format]
+quote-style = "preserve"
+docstring-code-format = true
+
+[tool.ruff.lint]
+select = ["E4", "E5", "E7", "E9", "F", "G", "LOG", "S", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+"benchmark/benchmark.py" = ["S"]

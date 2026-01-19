@@ -36,9 +36,12 @@ if oslo_rootwrap._patched_socket:
 try:
     finalize = weakref.finalize
 except AttributeError:
+
     def finalize(obj, func, *args, **kwargs):
-        return mp_util.Finalize(obj, func, args=args, kwargs=kwargs,
-                                exitpriority=0)
+        return mp_util.Finalize(
+            obj, func, args=args, kwargs=kwargs, exitpriority=0
+        )
+
 
 ClientManager = daemon.get_manager_class()
 LOG = logging.getLogger(__name__)
@@ -62,17 +65,22 @@ class Client:
 
     def _initialize(self):
         if self._process is not None and self._process.poll() is not None:
-            LOG.warning("Leaving behind already spawned process with pid %d, "
-                        "root should kill it if it's still there (I can't)",
-                        self._process.pid)
+            LOG.warning(
+                "Leaving behind already spawned process with pid %d, "
+                "root should kill it if it's still there (I can't)",
+                self._process.pid,
+            )
 
-        process_obj = subprocess.Popen(self._start_command,
-                                       stdin=subprocess.PIPE,
-                                       stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE,
-                                       close_fds=True)
-        LOG.debug("Popen for %s command has been instantiated",
-                  self._start_command)
+        process_obj = subprocess.Popen(
+            self._start_command,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            close_fds=True,
+        )
+        LOG.debug(
+            "Popen for %s command has been instantiated", self._start_command
+        )
 
         self._process = process_obj
         socket_path = process_obj.stdout.readline()[:-1]
@@ -83,15 +91,18 @@ class Client:
         if process_obj.poll() is not None:
             stderr = process_obj.stderr.read()
             # NOTE(yorik-sar): don't expose stdout here
-            raise Exception("Failed to spawn rootwrap process.\nstderr:\n%s" %
-                            (stderr,))
-        LOG.info("Spawned new rootwrap daemon process with pid=%d",
-                 process_obj.pid)
+            raise Exception(
+                f"Failed to spawn rootwrap process.\nstderr:\n{stderr}"
+            )
+        LOG.info(
+            "Spawned new rootwrap daemon process with pid=%d", process_obj.pid
+        )
 
         def wait_process():
             return_code = process_obj.wait()
-            LOG.info("Rootwrap daemon process exit with status: %d",
-                     return_code)
+            LOG.info(
+                "Rootwrap daemon process exit with status: %d", return_code
+            )
 
         reap_process = threading.Thread(target=wait_process)
         reap_process.daemon = True
@@ -99,8 +110,9 @@ class Client:
         self._manager = ClientManager(socket_path, authkey)
         self._manager.connect()
         self._proxy = self._manager.rootwrap()
-        self._finalize = finalize(self, self._shutdown, self._process,
-                                  self._manager)
+        self._finalize = finalize(
+            self, self._shutdown, self._process, self._manager
+        )
         self._initialized = True
 
     @staticmethod
@@ -108,8 +120,9 @@ class Client:
         # Storing JsonClient in arguments because globals are set to None
         # before executing atexit routines in Python 2.x
         if process.poll() is None:
-            LOG.info('Stopping rootwrap daemon process with pid=%s',
-                     process.pid)
+            LOG.info(
+                'Stopping rootwrap daemon process with pid=%s', process.pid
+            )
             for _ in range(SHUTDOWN_RETRIES):
                 try:
                     manager.rootwrap().shutdown()

@@ -36,6 +36,7 @@ def forwarding_popen(f, old_popen=subprocess.Popen):
         t.daemon = True
         t.start()
         return p
+
     return popen
 
 
@@ -50,8 +51,7 @@ class nonclosing:
         pass
 
 
-log_format = ("%(asctime)s | [%(process)5s]+%(levelname)5s | "
-              "%(message)s")
+log_format = "%(asctime)s | [%(process)5s]+%(levelname)5s | %(message)s"
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, format=log_format)
     sys.stderr = nonclosing(sys.stderr)

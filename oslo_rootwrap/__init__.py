@@ -23,12 +23,14 @@ except ImportError:
     _patched_socket = False
 else:
     # In tests patching happens later, so we'll rely on environment variable
-    _patched_socket = (eventlet.patcher.is_monkey_patched('socket') or
-                       os.environ.get('TEST_EVENTLET', False))
+    _patched_socket = eventlet.patcher.is_monkey_patched(
+        'socket'
+    ) or os.environ.get('TEST_EVENTLET', False)
 
 if not _patched_socket:
     import subprocess
 else:
     debtcollector.deprecate(
-        "Eventlet support is deprecated and will be soon removed.")
-    from eventlet.green import subprocess   # noqa
+        "Eventlet support is deprecated and will be soon removed."
+    )
+    from eventlet.green import subprocess  # noqa

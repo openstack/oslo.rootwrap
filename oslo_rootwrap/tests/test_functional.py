@@ -51,19 +51,19 @@ class _FunctionalBase:
         filters_file = os.path.join(tmpdir, 'filters.d', 'test.filters')
         os.mkdir(filters_dir)
         with open(self.config_file, 'w') as f:
-            f.write("""[DEFAULT]
-filters_path={}
+            f.write(f"""[DEFAULT]
+filters_path={filters_dir}
 daemon_timeout=10
-exec_dirs=/bin""".format(filters_dir))
+exec_dirs=/bin""")
         with open(filters_file, 'w') as f:
-            f.write("""[Filters]
+            f.write(f"""[Filters]
 echo: CommandFilter, /bin/echo, root
 cat: CommandFilter, /bin/cat, root
 sh: CommandFilter, /bin/sh, root
 id: CommandFilter, /usr/bin/id, nobody
 unknown_cmd: CommandFilter, /unknown/unknown_cmd, root
-later_install_cmd: CommandFilter, %s, root
-""" % self.later_cmd)
+later_install_cmd: CommandFilter, {self.later_cmd}, root
+""")
 
     def _test_run_once(self, expect_byte=True):
         code, out, err = self.execute(['echo', 'teststr'])
@@ -122,9 +122,11 @@ class RootwrapTest(_FunctionalBase, testtools.TestCase):
     def setUp(self):
         super().setUp()
         self.cmd = [
-            sys.executable, '-c',
+            sys.executable,
+            '-c',
             'from oslo_rootwrap import cmd; cmd.main()',
-            self.config_file]
+            self.config_file,
+        ]
 
     def execute(self, cmd, stdin=None):
         proc = subprocess.Popen(
@@ -134,10 +136,12 @@ class RootwrapTest(_FunctionalBase, testtools.TestCase):
             stderr=subprocess.PIPE,
         )
         out, err = proc.communicate(stdin)
-        self.addDetail('stdout',
-                       content.text_content(out.decode('utf-8', 'replace')))
-        self.addDetail('stderr',
-                       content.text_content(err.decode('utf-8', 'replace')))
+        self.addDetail(
+            'stdout', content.text_content(out.decode('utf-8', 'replace'))
+        )
+        self.addDetail(
+            'stderr', content.text_content(err.decode('utf-8', 'replace'))
+        )
         return proc.returncode, out, err
 
     def test_run_once(self):
@@ -151,8 +155,10 @@ class RootwrapDaemonTest(_FunctionalBase, testtools.TestCase):
     def assert_unpatched(self):
         # We need to verify that these tests are run without eventlet patching
         if eventlet and eventlet.patcher.is_monkey_patched('socket'):
-            self.fail("Standard library should not be patched by eventlet"
-                      " for this test")
+            self.fail(
+                "Standard library should not be patched by eventlet"
+                " for this test"
+            )
 
     def setUp(self):
         self.assert_unpatched()
@@ -161,8 +167,10 @@ class RootwrapDaemonTest(_FunctionalBase, testtools.TestCase):
 
         # Collect daemon logs
         daemon_log = io.BytesIO()
-        p = mock.patch('oslo_rootwrap.subprocess.Popen',
-                       run_daemon.forwarding_popen(daemon_log))
+        p = mock.patch(
+            'oslo_rootwrap.subprocess.Popen',
+            run_daemon.forwarding_popen(daemon_log),
+        )
         p.start()
         self.addCleanup(p.stop)
 
@@ -179,17 +187,24 @@ class RootwrapDaemonTest(_FunctionalBase, testtools.TestCase):
         # Add all logs as details
         @self.addCleanup
         def add_logs():
-            self.addDetail('daemon_log', content.Content(
-                content.UTF8_TEXT,
-                lambda: [daemon_log.getvalue()]))
-            self.addDetail('client_log', content.Content(
-                content.UTF8_TEXT,
-                lambda: [client_log.getvalue().encode('utf-8')]))
+            self.addDetail(
+                'daemon_log',
+                content.Content(
+                    content.UTF8_TEXT, lambda: [daemon_log.getvalue()]
+                ),
+            )
+            self.addDetail(
+                'client_log',
+                content.Content(
+                    content.UTF8_TEXT,
+                    lambda: [client_log.getvalue().encode('utf-8')],
+                ),
+            )
 
         # Create client
-        self.client = client.Client([
-            sys.executable, run_daemon.__file__,
-            self.config_file])
+        self.client = client.Client(
+            [sys.executable, run_daemon.__file__, self.config_file]
+        )
 
         # _finalize is set during Client.execute()
         @self.addCleanup
@@ -235,8 +250,9 @@ class RootwrapDaemonTest(_FunctionalBase, testtools.TestCase):
         try:
             # Run a shell script that signals calling process through FIFO and
             # then hangs around for 1 sec
-            self._thread_res = self.execute([
-                'sh', '-c', 'echo > "%s"; sleep 1; echo OK' % fifo_path])
+            self._thread_res = self.execute(
+                ['sh', '-c', f'echo > "{fifo_path}"; sleep 1; echo OK']
+            )
         except Exception as e:
             self._thread_res = e
 
@@ -280,17 +296,23 @@ class RootwrapDaemonTest(_FunctionalBase, testtools.TestCase):
             stop.wait(3)
             if not stop.is_set():
                 os.kill(process.pid, signal.SIGKILL)
+
         threading.Thread(target=sleep_kill).start()
         # Wait for process to finish one way or another
         self.client._process.wait()
         # Notify background thread that process is dead (no need to kill it)
         stop.set()
         # Fail if the process got killed by the background thread
-        self.assertNotEqual(-signal.SIGKILL, process.returncode,
-                            "Server haven't stopped in one second")
+        self.assertNotEqual(
+            -signal.SIGKILL,
+            process.returncode,
+            "Server haven't stopped in one second",
+        )
         # Verify that socket is deleted
-        self.assertFalse(os.path.exists(socket_path),
-                         "Server didn't remove its temporary directory")
+        self.assertFalse(
+            os.path.exists(socket_path),
+            "Server didn't remove its temporary directory",
+        )
 
     def test_daemon_cleanup_client(self):
         # Run _test_daemon_cleanup stopping daemon as Client instance would

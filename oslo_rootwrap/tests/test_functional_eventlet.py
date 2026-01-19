@@ -17,6 +17,7 @@ import os
 
 if os.environ.get('TEST_EVENTLET', False):
     import eventlet
+
     eventlet.monkey_patch()
 
     from oslo_rootwrap.tests import test_functional
@@ -28,7 +29,8 @@ if os.environ.get('TEST_EVENTLET', False):
 
         def _thread_worker(self, seconds, msg):
             code, out, err = self.execute(
-                ['sh', '-c', 'sleep %d; echo %s' % (seconds, msg)])
+                ['sh', '-c', f'sleep {seconds}; echo {msg}']
+            )
             # Ignore trailing newline
             self.assertEqual(msg, out.rstrip())
 
@@ -50,10 +52,13 @@ if os.environ.get('TEST_EVENTLET', False):
             # 10 was not enough for some reason.
             for i in range(15):
                 th.append(
-                    eventlet.spawn(self._thread_worker, i % 3, 'abc%d' % i))
+                    eventlet.spawn(self._thread_worker, i % 3, f'abc{i}')
+                )
             for i in [5, 17, 20, 25]:
                 th.append(
-                    eventlet.spawn(self._thread_worker_timeout, 2,
-                                   'timeout%d' % i, i))
+                    eventlet.spawn(
+                        self._thread_worker_timeout, 2, f'timeout{i}', i
+                    )
+                )
             for thread in th:
                 thread.wait()

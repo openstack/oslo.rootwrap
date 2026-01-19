@@ -49,21 +49,24 @@ class RootwrapClass:
         self.reset_timer()
         try:
             obj = wrapper.start_subprocess(
-                self.filters, userargs,
+                self.filters,
+                userargs,
                 exec_dirs=self.config.exec_dirs,
                 log=self.config.use_syslog,
                 close_fds=True,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE)
+                stderr=subprocess.PIPE,
+            )
         except wrapper.FilterMatchNotExecutable:
-            LOG.warning("Executable not found for: %s",
-                        ' '.join(userargs))
+            LOG.warning("Executable not found for: %s", ' '.join(userargs))
             return cmd.RC_NOEXECFOUND, "", ""
 
         except wrapper.NoFilterMatched:
-            LOG.warning("Unauthorized command: %s (no filter matched)",
-                        ' '.join(userargs))
+            LOG.warning(
+                "Unauthorized command: %s (no filter matched)",
+                ' '.join(userargs),
+            )
             return cmd.RC_UNAUTHORIZED, "", ""
 
         if stdin is not None:
@@ -89,9 +92,9 @@ class RootwrapClass:
         if config is not None:
             cls.daemon_timeout = config.daemon_timeout
         # Wait a bit longer to avoid rounding errors
-        timeout = max(
-            cls.last_called + cls.daemon_timeout - time.time(),
-            0) + 1
+        timeout = (
+            max(cls.last_called + cls.daemon_timeout - time.time(), 0) + 1
+        )
         if getattr(cls, 'timeout', None):
             # Another timer is already initialized
             return
@@ -115,8 +118,7 @@ def get_manager_class(config=None, filters=None):
     class RootwrapManager(managers.BaseManager):
         def __init__(self, address=None, authkey=None):
             # Force jsonrpc because neither pickle nor xmlrpclib is secure
-            super().__init__(address, authkey,
-                             serializer='jsonrpc')
+            super().__init__(address, authkey, serializer='jsonrpc')
 
     if config is not None:
         partial_class = functools.partial(RootwrapClass, config, filters)
@@ -132,9 +134,13 @@ def daemon_start(config, filters):
     LOG.debug("Created temporary directory %s", temp_dir)
     try:
         # allow everybody to find the socket
-        rwxr_xr_x = (stat.S_IRWXU |
-                     stat.S_IRGRP | stat.S_IXGRP |
-                     stat.S_IROTH | stat.S_IXOTH)
+        rwxr_xr_x = (
+            stat.S_IRWXU
+            | stat.S_IRGRP
+            | stat.S_IXGRP
+            | stat.S_IROTH
+            | stat.S_IXOTH
+        )
         os.chmod(temp_dir, rwxr_xr_x)
         socket_path = os.path.join(temp_dir, "rootwrap.sock")
         LOG.debug("Will listen on socket %s", socket_path)
@@ -143,9 +149,14 @@ def daemon_start(config, filters):
         server = manager.get_server()
         try:
             # allow everybody to connect to the socket
-            rw_rw_rw_ = (stat.S_IRUSR | stat.S_IWUSR |
-                         stat.S_IRGRP | stat.S_IWGRP |
-                         stat.S_IROTH | stat.S_IWOTH)
+            rw_rw_rw_ = (
+                stat.S_IRUSR
+                | stat.S_IWUSR
+                | stat.S_IRGRP
+                | stat.S_IWGRP
+                | stat.S_IROTH
+                | stat.S_IWOTH
+            )
             os.chmod(socket_path, rw_rw_rw_)
             try:
                 # In Python 3 we have to use buffer to push in bytes directly
