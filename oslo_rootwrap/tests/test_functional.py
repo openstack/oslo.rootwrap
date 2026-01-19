@@ -17,7 +17,6 @@ import contextlib
 import io
 import logging
 import os
-import pwd
 import shutil
 import signal
 import sys
@@ -31,94 +30,16 @@ except ImportError:
     eventlet = None
 
 import fixtures
-import testtools
 from testtools import content
-
 
 from oslo_rootwrap import client
 from oslo_rootwrap import cmd
 from oslo_rootwrap import subprocess
+from oslo_rootwrap.tests import functional_base
 from oslo_rootwrap.tests import run_daemon
 
 
-class _FunctionalBase:
-    def setUp(self):
-        super().setUp()
-        tmpdir = self.useFixture(fixtures.TempDir()).path
-        self.config_file = os.path.join(tmpdir, 'rootwrap.conf')
-        self.later_cmd = os.path.join(tmpdir, 'later_install_cmd')
-        filters_dir = os.path.join(tmpdir, 'filters.d')
-        filters_file = os.path.join(tmpdir, 'filters.d', 'test.filters')
-        os.mkdir(filters_dir)
-        with open(self.config_file, 'w') as f:
-            f.write(f"""[DEFAULT]
-filters_path={filters_dir}
-daemon_timeout=10
-exec_dirs=/bin""")
-        with open(filters_file, 'w') as f:
-            f.write(f"""[Filters]
-echo: CommandFilter, /bin/echo, root
-cat: CommandFilter, /bin/cat, root
-sh: CommandFilter, /bin/sh, root
-id: CommandFilter, /usr/bin/id, nobody
-unknown_cmd: CommandFilter, /unknown/unknown_cmd, root
-later_install_cmd: CommandFilter, {self.later_cmd}, root
-""")
-
-    def _test_run_once(self, expect_byte=True):
-        code, out, err = self.execute(['echo', 'teststr'])
-        self.assertEqual(0, code)
-        if expect_byte:
-            expect_out = b'teststr\n'
-            expect_err = b''
-        else:
-            expect_out = 'teststr\n'
-            expect_err = ''
-        self.assertEqual(expect_out, out)
-        self.assertEqual(expect_err, err)
-
-    def _test_run_with_stdin(self, expect_byte=True):
-        code, out, err = self.execute(['cat'], stdin=b'teststr')
-        self.assertEqual(0, code)
-        if expect_byte:
-            expect_out = b'teststr'
-            expect_err = b''
-        else:
-            expect_out = 'teststr'
-            expect_err = ''
-        self.assertEqual(expect_out, out)
-        self.assertEqual(expect_err, err)
-
-    def test_run_with_path(self):
-        code, out, err = self.execute(['/bin/echo', 'teststr'])
-        self.assertEqual(0, code)
-
-    def test_run_with_bogus_path(self):
-        code, out, err = self.execute(['/home/bob/bin/echo', 'teststr'])
-        self.assertEqual(cmd.RC_UNAUTHORIZED, code)
-
-    def test_run_command_not_found(self):
-        code, out, err = self.execute(['unknown_cmd'])
-        self.assertEqual(cmd.RC_NOEXECFOUND, code)
-
-    def test_run_unauthorized_command(self):
-        code, out, err = self.execute(['unauthorized_cmd'])
-        self.assertEqual(cmd.RC_UNAUTHORIZED, code)
-
-    def test_run_as(self):
-        if os.getuid() != 0:
-            self.skip('Test requires root (for setuid)')
-
-        # Should run as 'nobody'
-        code, out, err = self.execute(['id', '-u'])
-        self.assertEqual(pwd.getpwnam('nobody').pw_uid, int(out.strip()))
-
-        # Should run as 'root'
-        code, out, err = self.execute(['sh', '-c', 'id -u'])
-        self.assertEqual(0, int(out.strip()))
-
-
-class RootwrapTest(_FunctionalBase, testtools.TestCase):
+class RootwrapTest(functional_base._FunctionalBase):
     def setUp(self):
         super().setUp()
         self.cmd = [
@@ -151,7 +72,7 @@ class RootwrapTest(_FunctionalBase, testtools.TestCase):
         self._test_run_with_stdin(expect_byte=True)
 
 
-class RootwrapDaemonTest(_FunctionalBase, testtools.TestCase):
+class RootwrapDaemonTest(functional_base._FunctionalBase):
     def assert_unpatched(self):
         # We need to verify that these tests are run without eventlet patching
         if eventlet and eventlet.patcher.is_monkey_patched('socket'):
@@ -210,6 +131,7 @@ class RootwrapDaemonTest(_FunctionalBase, testtools.TestCase):
         @self.addCleanup
         def finalize_client():
             if self.client._initialized:
+                assert self.client._finalize is not None  # narrow type
                 self.client._finalize()
 
         self.execute = self.client.execute
@@ -233,6 +155,7 @@ class RootwrapDaemonTest(_FunctionalBase, testtools.TestCase):
         # Let the client start a daemon
         self.execute(['cat'])
         # Make daemon go away
+        assert self.client._process is not None
         os.kill(self.client._process.pid, signal.SIGTERM)
         # Expect client to successfully restart daemon and run simple request
         self.test_run_once()
@@ -246,11 +169,13 @@ class RootwrapDaemonTest(_FunctionalBase, testtools.TestCase):
             self.execute(['echo'])
             restart.assert_called_once()
 
-    def _exec_thread(self, fifo_path):
+    def _exec_thread(self, fifo_path: str) -> None:
         try:
             # Run a shell script that signals calling process through FIFO and
             # then hangs around for 1 sec
-            self._thread_res = self.execute(
+            self._thread_res: (
+                tuple[int, str | bytes, str | bytes] | Exception
+            ) = self.execute(
                 ['sh', '-c', f'echo > "{fifo_path}"; sleep 1; echo OK']
             )
         except Exception as e:
@@ -270,6 +195,7 @@ class RootwrapDaemonTest(_FunctionalBase, testtools.TestCase):
         with open(fifo_path) as f:
             f.readline()
         # Gracefully kill daemon process
+        assert self.client._process is not None
         os.kill(self.client._process.pid, signal.SIGTERM)
         # Expect daemon to wait for our request to finish
         t.join()
@@ -284,10 +210,13 @@ class RootwrapDaemonTest(_FunctionalBase, testtools.TestCase):
     def _test_daemon_cleanup(self):
         # Start a daemon
         self.execute(['cat'])
+        assert self.client._manager is not None
         socket_path = self.client._manager.address
+        assert isinstance(socket_path, str)
         # Stop it one way or another
         yield
         process = self.client._process
+        assert process is not None
         stop = threading.Event()
 
         # Start background thread that would kill process in 1 second if it
@@ -299,7 +228,7 @@ class RootwrapDaemonTest(_FunctionalBase, testtools.TestCase):
 
         threading.Thread(target=sleep_kill).start()
         # Wait for process to finish one way or another
-        self.client._process.wait()
+        process.wait()
         # Notify background thread that process is dead (no need to kill it)
         stop.set()
         # Fail if the process got killed by the background thread
@@ -318,9 +247,11 @@ class RootwrapDaemonTest(_FunctionalBase, testtools.TestCase):
         # Run _test_daemon_cleanup stopping daemon as Client instance would
         # normally do
         with self._test_daemon_cleanup():
+            assert self.client._finalize is not None  # narrow type
             self.client._finalize()
 
     def test_daemon_cleanup_signal(self):
         # Run _test_daemon_cleanup stopping daemon with SIGTERM signal
         with self._test_daemon_cleanup():
+            assert self.client._process is not None
             os.kill(self.client._process.pid, signal.SIGTERM)

@@ -20,13 +20,14 @@ from multiprocessing import connection
 from multiprocessing import managers
 import socket
 import struct
+from typing import Any
 import weakref
 
 from oslo_rootwrap import wrapper
 
 
 class RpcJSONEncoder(json.JSONEncoder):
-    def default(self, o):
+    def default(self, o: object) -> Any:
         # We need to pass bytes unchanged as they are expected in arguments for
         # and are result of Popen.communicate()
         if isinstance(o, bytes):
@@ -46,7 +47,7 @@ class RpcJSONEncoder(json.JSONEncoder):
 
 
 # Parse whatever RpcJSONEncoder supplied us with
-def rpc_object_hook(obj):
+def rpc_object_hook(obj: dict[str, Any]) -> Any:
     if "__exception__" in obj:
         type_name = obj.pop("__exception__")
         if type_name not in ("NoFilterMatched", "FilterMatchNotExecutable"):
@@ -60,7 +61,12 @@ def rpc_object_hook(obj):
 
 
 class JsonListener:
-    def __init__(self, address, backlog=1):
+    address: str
+    closed: bool
+    _socket: socket.socket
+    _accepted: weakref.WeakSet["JsonConnection"]
+
+    def __init__(self, address: str, backlog: int = 1) -> None:
         self.address = address
         self._socket = socket.socket(socket.AF_UNIX)
         try:
@@ -73,7 +79,7 @@ class JsonListener:
         self.closed = False
         self._accepted = weakref.WeakSet()
 
-    def accept(self):
+    def accept(self) -> "JsonConnection":
         while True:
             try:
                 s, _ = self._socket.accept()
@@ -89,65 +95,67 @@ class JsonListener:
         self._accepted.add(conn)
         return conn
 
-    def close(self):
+    def close(self) -> None:
         if not self.closed:
             self._socket.shutdown(socket.SHUT_RDWR)
             self._socket.close()
             self.closed = True
 
-    def get_accepted(self):
+    def get_accepted(self) -> weakref.WeakSet["JsonConnection"]:
         return self._accepted
 
 
 if hasattr(managers.Server, 'accepter'):
     # In Python 3 accepter() thread has infinite loop. We break it with
     # EOFError, so we should silence this error here.
-    def silent_accepter(self):
+    def silent_accepter(self: managers.Server) -> None:
         try:
             old_accepter(self)
         except EOFError:
             pass
 
     old_accepter = managers.Server.accepter
-    managers.Server.accepter = silent_accepter
+    managers.Server.accepter = silent_accepter  # type: ignore[method-assign]
 
 
 class JsonConnection:
-    def __init__(self, sock):
+    _socket: socket.socket
+
+    def __init__(self, sock: socket.socket) -> None:
         sock.setblocking(True)
         self._socket = sock
 
-    def send_bytes(self, s):
+    def send_bytes(self, s: bytes) -> None:
         self._socket.sendall(struct.pack('!Q', len(s)))
         self._socket.sendall(s)
 
-    def recv_bytes(self, maxsize=None):
+    def recv_bytes(self, maxsize: int | None = None) -> bytes:
         item = struct.unpack('!Q', self.recvall(8))[0]
         if maxsize is not None and item > maxsize:
             raise RuntimeError("Too big message received")
         s = self.recvall(item)
         return s
 
-    def send(self, obj):
+    def send(self, obj: object) -> None:
         s = self.dumps(obj)
         self.send_bytes(s)
 
-    def recv(self):
+    def recv(self) -> Any:
         s = self.recv_bytes()
         return self.loads(s)
 
-    def close(self):
+    def close(self) -> None:
         self._socket.close()
 
-    def half_close(self):
+    def half_close(self) -> None:
         self._socket.shutdown(socket.SHUT_RD)
 
     # We have to use slow version of recvall with eventlet because of a bug in
     # GreenSocket.recv_into:
     # https://bitbucket.org/eventlet/eventlet/pull-request/41
-    def _recvall_slow(self, size):
+    def _recvall_slow(self, size: int) -> bytes:
         remaining = size
-        res = []
+        res: list[bytes] = []
         while remaining:
             piece = self._socket.recv(remaining)
             if not piece:
@@ -156,7 +164,7 @@ class JsonConnection:
             remaining -= len(piece)
         return b''.join(res)
 
-    def recvall(self, size):
+    def recvall(self, size: int) -> bytes:
         buf = bytearray(size)
         mem = memoryview(buf)
         got = 0
@@ -170,11 +178,11 @@ class JsonConnection:
         return bytes(buf)
 
     @staticmethod
-    def dumps(obj):
+    def dumps(obj: object) -> bytes:
         return json.dumps(obj, cls=RpcJSONEncoder).encode('utf-8')
 
     @staticmethod
-    def loads(s):
+    def loads(s: bytes) -> Any:
         res = json.loads(s.decode('utf-8'), object_hook=rpc_object_hook)
         try:
             kind = res[0]
@@ -190,11 +198,11 @@ class JsonConnection:
 
 
 class JsonClient(JsonConnection):
-    def __init__(self, address, authkey=None):
+    def __init__(self, address: str, authkey: bytes | None = None) -> None:
         sock = socket.socket(socket.AF_UNIX)
         sock.setblocking(True)
         sock.connect(address)
         super().__init__(sock)
         if authkey is not None:
-            connection.answer_challenge(self, authkey)
-            connection.deliver_challenge(self, authkey)
+            connection.answer_challenge(self, authkey)  # type: ignore[arg-type]
+            connection.deliver_challenge(self, authkey)  # type: ignore[arg-type]

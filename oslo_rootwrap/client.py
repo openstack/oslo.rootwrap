@@ -13,10 +13,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from collections.abc import Callable, Sequence
 import logging
 from multiprocessing import managers
+import subprocess as stdlib_subprocess
 import threading
 import time
+from typing import Any
 import weakref
 
 import oslo_rootwrap
@@ -30,8 +33,9 @@ if oslo_rootwrap._patched_socket:
     # https://bitbucket.org/eventlet/eventlet/pull-request/41
     # This check happens here instead of jsonrpc to avoid importing eventlet
     # from daemon code that is run with root privileges.
-    jsonrpc.JsonConnection.recvall = jsonrpc.JsonConnection._recvall_slow
-
+    jsonrpc.JsonConnection.recvall = (  # type: ignore[method-assign]
+        jsonrpc.JsonConnection._recvall_slow
+    )
 
 ClientManager = daemon.get_manager_class()
 LOG = logging.getLogger(__name__)
@@ -39,7 +43,17 @@ SHUTDOWN_RETRIES = 3
 
 
 class Client:
-    def __init__(self, rootwrap_daemon_cmd):
+    _start_command: Sequence[str]
+    _initialized: bool
+    _need_restart: bool
+    _mutex: threading.Lock
+    _manager: managers.BaseManager | None
+    _proxy: Any  # RootwrapClass proxy
+    _process: stdlib_subprocess.Popen[bytes] | None
+    _finalize: Callable[[], None] | None
+    _exec_sem: threading.Lock
+
+    def __init__(self, rootwrap_daemon_cmd: Sequence[str]) -> None:
         self._start_command = rootwrap_daemon_cmd
         self._initialized = False
         self._need_restart = False
@@ -53,7 +67,7 @@ class Client:
         # needed with the threading module.
         self._exec_sem = threading.Lock()
 
-    def _initialize(self):
+    def _initialize(self) -> None:
         if self._process is not None and self._process.poll() is not None:
             LOG.warning(
                 "Leaving behind already spawned process with pid %d, "
@@ -73,19 +87,21 @@ class Client:
         )
 
         self._process = process_obj
+        assert process_obj.stdout is not None  # narrow type
+        assert process_obj.stderr is not None  # narrow type
         socket_path = process_obj.stdout.readline()[:-1].decode('utf-8')
         authkey = process_obj.stdout.read(32)
         if process_obj.poll() is not None:
             stderr = process_obj.stderr.read()
             # NOTE(yorik-sar): don't expose stdout here
             raise Exception(
-                f"Failed to spawn rootwrap process.\nstderr:\n{stderr}"
+                f"Failed to spawn rootwrap process.\nstderr:\n{stderr!r}"
             )
         LOG.info(
             "Spawned new rootwrap daemon process with pid=%d", process_obj.pid
         )
 
-        def wait_process():
+        def wait_process() -> None:
             return_code = process_obj.wait()
             LOG.info(
                 "Rootwrap daemon process exit with status: %d", return_code
@@ -96,14 +112,18 @@ class Client:
         reap_process.start()
         self._manager = ClientManager(socket_path, authkey)
         self._manager.connect()
-        self._proxy = self._manager.rootwrap()
+        self._proxy = self._manager.rootwrap()  # type: ignore[attr-defined]
         self._finalize = weakref.finalize(
             self, self._shutdown, self._process, self._manager
         )
         self._initialized = True
 
     @staticmethod
-    def _shutdown(process, manager, JsonClient=jsonrpc.JsonClient):
+    def _shutdown(
+        process: stdlib_subprocess.Popen[bytes],
+        manager: managers.BaseManager,
+        JsonClient: type[jsonrpc.JsonClient] = jsonrpc.JsonClient,
+    ) -> None:
         # Storing JsonClient in arguments because globals are set to None
         # before executing atexit routines in Python 2.x
         if process.poll() is None:
@@ -112,7 +132,7 @@ class Client:
             )
             for _ in range(SHUTDOWN_RETRIES):
                 try:
-                    manager.rootwrap().shutdown()
+                    manager.rootwrap().shutdown()  # type: ignore[attr-defined]
                     break
                 except (EOFError, OSError):
                     break  # assume it is dead already
@@ -122,19 +142,20 @@ class Client:
             # can't provide sane timeout on 2.x and we most likely don't have
             # permisions to do so
         # Invalidate manager's state so that proxy won't try to do decref
-        manager._state.value = managers.State.SHUTDOWN
+        manager._state.value = managers.State.SHUTDOWN  # type: ignore[attr-defined]
 
-    def _ensure_initialized(self):
+    def _ensure_initialized(self) -> None:
         with self._mutex:
             if not self._initialized:
                 self._initialize()
 
-    def _restart(self, proxy):
+    def _restart(self, proxy: Any) -> Any:
         with self._mutex:
             if not self._initialized:
                 raise AssertionError("Client should be initialized.")
             # Verify if someone has already restarted this.
             if self._proxy is proxy:
+                assert self._finalize is not None  # narrow type
                 self._finalize()
                 self._manager = None
                 self._proxy = None
@@ -143,7 +164,9 @@ class Client:
                 self._need_restart = False
             return self._proxy
 
-    def _run_one_command(self, proxy, cmd, stdin):
+    def _run_one_command(
+        self, proxy: Any, cmd: list[str], stdin: str | None
+    ) -> tuple[int, str, str]:
         """Wrap proxy.run_one_command, setting _need_restart on an exception.
 
         Usually it should be enough to drain stale data on socket
@@ -151,14 +174,16 @@ class Client:
         """
         try:
             _need_restart = True
-            res = proxy.run_one_command(cmd, stdin)
+            res: tuple[int, str, str] = proxy.run_one_command(cmd, stdin)
             _need_restart = False
             return res
         finally:
             if _need_restart:
                 self._need_restart = True
 
-    def execute(self, cmd, stdin=None):
+    def execute(
+        self, cmd: list[str], stdin: str | None = None
+    ) -> tuple[int, str, str]:
         with self._exec_sem:
             self._ensure_initialized()
             proxy = self._proxy

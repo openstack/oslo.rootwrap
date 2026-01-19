@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from collections.abc import Sequence
 import os
 import re
 import shutil
@@ -28,12 +29,12 @@ if sys.platform != 'win32':
     import pwd
 
 
-def _getuid(user):
+def _getuid(user: str) -> int:
     """Return uid for user."""
     return pwd.getpwnam(user).pw_uid
 
 
-def realpath(path):
+def realpath(path: str) -> str:
     """Return the real absolute path.
 
     If the execution directory does not exist, os.getcwd() raises a
@@ -49,14 +50,14 @@ def realpath(path):
 class CommandFilter:
     """Command filter only checking that the 1st argument matches exec_path."""
 
-    def __init__(self, exec_path, run_as, *args):
+    def __init__(self, exec_path: str, run_as: str, *args: str) -> None:
         self.name = ''
         self.exec_path = exec_path
         self.run_as = run_as
         self.args = args
-        self.real_exec = None
+        self.real_exec: str | None = None
 
-    def get_exec(self, exec_dirs=None):
+    def get_exec(self, exec_dirs: list[str] | None = None) -> str | None:
         """Returns existing executable, or empty string if none found."""
         exec_dirs = exec_dirs or []
         if self.real_exec is not None:
@@ -72,7 +73,7 @@ class CommandFilter:
                     break
         return self.real_exec
 
-    def match(self, userargs):
+    def match(self, userargs: list[str] | None) -> bool:
         """Only check that the first argument (command) matches exec_path."""
         if userargs:
             base_path_matches = os.path.basename(self.exec_path) == userargs[0]
@@ -80,18 +81,20 @@ class CommandFilter:
             return exact_path_matches or base_path_matches
         return False
 
-    def preexec(self):
+    def preexec(self) -> None:
         """Setuid in subprocess right before command is invoked."""
         if self.run_as != 'root':
             os.setuid(_getuid(self.run_as))
 
-    def get_command(self, userargs, exec_dirs=None):
+    def get_command(
+        self, userargs: list[str], exec_dirs: list[str] | None = None
+    ) -> list[str]:
         """Returns command to execute."""
         exec_dirs = exec_dirs or []
         to_exec = self.get_exec(exec_dirs=exec_dirs) or self.exec_path
-        return [to_exec] + userargs[1:]
+        return [to_exec] + list(userargs[1:])
 
-    def get_environment(self, userargs):
+    def get_environment(self, userargs: list[str]) -> dict[str, str] | None:
         """Returns specific environment to set, None if none."""
         return None
 
@@ -99,7 +102,7 @@ class CommandFilter:
 class RegExpFilter(CommandFilter):
     """Command filter doing regexp matching for every argument."""
 
-    def match(self, userargs):
+    def match(self, userargs: list[str] | None) -> bool:
         # Early skip if command or number of args don't match
         if not userargs or len(self.args) != len(userargs):
             # DENY: argument numbers don't match
@@ -131,7 +134,7 @@ class PathFilter(CommandFilter):
 
     """
 
-    def match(self, userargs):
+    def match(self, userargs: list[str] | None) -> bool:
         if not userargs or len(userargs) < 2:
             return False
 
@@ -157,7 +160,9 @@ class PathFilter(CommandFilter):
             and paths_are_within_base_dirs
         )
 
-    def get_command(self, userargs, exec_dirs=None):
+    def get_command(
+        self, userargs: list[str], exec_dirs: list[str] | None = None
+    ) -> list[str]:
         exec_dirs = exec_dirs or []
         command, arguments = userargs[0], userargs[1:]
 
@@ -182,14 +187,14 @@ class KillFilter(CommandFilter):
     executable, so it will only work on procfs-capable systems (not OSX).
     """
 
-    def __init__(self, *args):
+    def __init__(self, *args: str) -> None:
         super().__init__("/bin/kill", *args)
 
-    def _program(self, pid):
+    def _program(self, pid: int) -> str | None:
         """Determine the program associated with pid"""
 
         try:
-            command = os.readlink(f"/proc/{int(pid)}/exe")
+            command = os.readlink(f"/proc/{pid}/exe")
         except (ValueError, OSError):
             # Incorrect PID
             return None
@@ -211,10 +216,10 @@ class KillFilter(CommandFilter):
         # a ';......' or '.#prelink#......' suffix etc.
         # So defer to /proc/PID/cmdline in that case.
         try:
-            with open(f"/proc/{int(pid)}/cmdline") as pfile:
+            with open(f"/proc/{pid}/cmdline") as pfile:
                 cmdline = pfile.read().partition('\0')[0]
 
-            cmdline = shutil.which(cmdline)
+            cmdline = shutil.which(cmdline) or cmdline
             if os.path.isfile(cmdline):
                 command = cmdline
 
@@ -225,7 +230,7 @@ class KillFilter(CommandFilter):
         except OSError:
             return None
 
-    def match(self, userargs):
+    def match(self, userargs: list[str] | None) -> bool:
         if not userargs or userargs[0] != "kill":
             return False
         args = list(userargs)
@@ -243,7 +248,11 @@ class KillFilter(CommandFilter):
                 # No signal requested, but filter requires specific signal
                 return False
 
-        command = self._program(args[1])
+        try:
+            pid = int(args[1])
+        except ValueError:
+            return False
+        command = self._program(pid)
         if not command:
             return False
 
@@ -263,18 +272,20 @@ class KillFilter(CommandFilter):
 class ReadFileFilter(CommandFilter):
     """Specific filter for the utils.read_file_as_root call."""
 
-    def __init__(self, file_path, *args):
+    def __init__(self, file_path: str, *args: str) -> None:
         self.file_path = file_path
         super().__init__("/bin/cat", "root", *args)
 
-    def match(self, userargs):
+    def match(self, userargs: list[str] | None) -> bool:
         return userargs == ['cat', self.file_path]
 
 
 class IpFilter(CommandFilter):
     """Specific filter for the ip utility to that does not match exec."""
 
-    def match(self, userargs):
+    def match(self, userargs: list[str] | None) -> bool:
+        if not userargs:
+            return False
         if userargs[0] == 'ip':
             # Avoid the 'netns exec' command here
             for a, b in zip(userargs[1:], userargs[2:]):
@@ -282,6 +293,7 @@ class IpFilter(CommandFilter):
                     return b not in EXEC_VARS
             else:
                 return True
+        return False
 
 
 class EnvFilter(CommandFilter):
@@ -291,7 +303,7 @@ class EnvFilter(CommandFilter):
     leading env A=B.. strings appropriately.
     """
 
-    def _extract_env(self, arglist):
+    def _extract_env(self, arglist: Sequence[str]) -> set[str]:
         """Extract all leading NAME=VALUE arguments from arglist."""
 
         envs = set()
@@ -301,7 +313,7 @@ class EnvFilter(CommandFilter):
             envs.add(arg.partition('=')[0])
         return envs
 
-    def __init__(self, exec_path, run_as, *args):
+    def __init__(self, exec_path: str, run_as: str, *args: str) -> None:
         super().__init__(exec_path, run_as, *args)
 
         env_list = self._extract_env(self.args)
@@ -310,7 +322,9 @@ class EnvFilter(CommandFilter):
         if "env" in exec_path and len(env_list) < len(self.args):
             self.exec_path = self.args[len(env_list)]
 
-    def match(self, userargs):
+    def match(self, userargs: list[str] | None) -> bool:
+        if not userargs:
+            return False
         # ignore leading 'env'
         if userargs[0] == 'env':
             userargs.pop(0)
@@ -325,13 +339,13 @@ class EnvFilter(CommandFilter):
         user_command = userargs[len(user_envs) : len(user_envs) + 1]
 
         # match first non-env argument with CommandFilter
-        return (
+        return bool(
             super().match(user_command)
             and len(filter_envs)
             and user_envs == filter_envs
         )
 
-    def exec_args(self, userargs):
+    def exec_args(self, userargs: list[str]) -> list[str]:
         args = userargs[:]
 
         # ignore leading 'env'
@@ -344,11 +358,13 @@ class EnvFilter(CommandFilter):
 
         return args
 
-    def get_command(self, userargs, exec_dirs=[]):
-        to_exec = self.get_exec(exec_dirs=exec_dirs) or self.exec_path
+    def get_command(
+        self, userargs: list[str], exec_dirs: list[str] | None = None
+    ) -> list[str]:
+        to_exec = self.get_exec(exec_dirs=exec_dirs or []) or self.exec_path
         return [to_exec] + self.exec_args(userargs)[1:]
 
-    def get_environment(self, userargs):
+    def get_environment(self, userargs: list[str]) -> dict[str, str] | None:
         env = os.environ.copy()
 
         # ignore leading 'env'
@@ -367,17 +383,17 @@ class EnvFilter(CommandFilter):
 
 
 class ChainingFilter(CommandFilter):
-    def exec_args(self, userargs):
+    def exec_args(self, userargs: list[str]) -> list[str]:
         return []
 
 
 class IpNetnsExecFilter(ChainingFilter):
     """Specific filter for the ip utility to that does match exec."""
 
-    def match(self, userargs):
+    def match(self, userargs: list[str] | None) -> bool:
         # Network namespaces currently require root
         # require <ns> argument
-        if self.run_as != "root" or len(userargs) < 4:
+        if not userargs or self.run_as != "root" or len(userargs) < 4:
             return False
 
         return (
@@ -386,7 +402,7 @@ class IpNetnsExecFilter(ChainingFilter):
             and userargs[2] in EXEC_VARS
         )
 
-    def exec_args(self, userargs):
+    def exec_args(self, userargs: list[str]) -> list[str]:
         args = userargs[4:]
         if args:
             args[0] = os.path.basename(args[0])
@@ -400,7 +416,7 @@ class ChainingRegExpFilter(ChainingFilter):
     specified as the arguments must be also allowed to execute directly.
     """
 
-    def match(self, userargs):
+    def match(self, userargs: list[str] | None) -> bool:
         # Early skip if number of args is smaller than the filter
         if not userargs or len(self.args) > len(userargs):
             return False
@@ -416,7 +432,7 @@ class ChainingRegExpFilter(ChainingFilter):
         # ALLOW: All arguments matched
         return True
 
-    def exec_args(self, userargs):
+    def exec_args(self, userargs: list[str]) -> list[str]:
         args = userargs[len(self.args) :]
         if args:
             args[0] = os.path.basename(args[0])

@@ -153,6 +153,7 @@ class RootwrapTestCase(testtools.TestCase):
         self.assertTrue(f.match(usercmd))
         self.assertEqual(['/usr/bin/dnsmasq', 'foo'], f.get_command(usercmd))
         env = f.get_environment(usercmd)
+        assert env is not None
         self.assertEqual('A', env.get(config_file_arg))
         self.assertEqual('foobar', env.get('NETWORK_ID'))
 
@@ -176,7 +177,7 @@ class RootwrapTestCase(testtools.TestCase):
         self.assertTrue(f.match(usercmd))
 
         # require given environment variables to match
-        self.assertFalse(f.match([envcmd, 'C=ELSE']))
+        self.assertFalse(f.match(envcmd + ['C=ELSE']))
         self.assertFalse(f.match(['env', 'C=xx']))
         self.assertFalse(f.match(['env', 'A=xx']))
 
@@ -190,6 +191,7 @@ class RootwrapTestCase(testtools.TestCase):
         # ensure that the env command is stripped when executing
         self.assertEqual(realcmd, f.exec_args(usercmd))
         env = f.get_environment(usercmd)
+        assert env is not None
         # check that environment variables are set
         self.assertEqual('/some/thing', env.get('A'))
         self.assertEqual('somethingelse', env.get('B'))
@@ -209,6 +211,7 @@ class RootwrapTestCase(testtools.TestCase):
         self.assertEqual(realcmd, f.get_command(envset + realcmd))
 
         env = f.get_environment(envset + realcmd)
+        assert env is not None
         # check that environment variables are set
         self.assertEqual('/some/thing', env.get('A'))
         self.assertEqual('somethingelse', env.get('B'))
@@ -227,14 +230,14 @@ class RootwrapTestCase(testtools.TestCase):
             f = filters.KillFilter("root", "/bin/cat", "-9", "-HUP")
             f2 = filters.KillFilter("root", "/usr/bin/cat", "-9", "-HUP")
             f3 = filters.KillFilter("root", "/usr/bin/coreutils", "-9", "-HUP")
-            usercmd = ['kill', '-ALRM', p.pid]
+            usercmd = ['kill', '-ALRM', str(p.pid)]
             # Incorrect signal should fail
             self.assertFalse(f.match(usercmd) or f2.match(usercmd))
-            usercmd = ['kill', p.pid]
+            usercmd = ['kill', str(p.pid)]
             # Providing no signal should fail
             self.assertFalse(f.match(usercmd) or f2.match(usercmd))
             # Providing matching signal should be allowed
-            usercmd = ['kill', '-9', p.pid]
+            usercmd = ['kill', '-9', str(p.pid)]
             self.assertTrue(
                 f.match(usercmd) or f2.match(usercmd) or f3.match(usercmd)
             )
@@ -242,13 +245,13 @@ class RootwrapTestCase(testtools.TestCase):
             f = filters.KillFilter("root", "/bin/cat")
             f2 = filters.KillFilter("root", "/usr/bin/cat")
             f3 = filters.KillFilter("root", "/usr/bin/coreutils")
-            usercmd = ['kill', os.getpid()]
+            usercmd = ['kill', str(os.getpid())]
             # Our own PID does not match /bin/sleep, so it should fail
             self.assertFalse(f.match(usercmd) or f2.match(usercmd))
-            usercmd = ['kill', 999999]
+            usercmd = ['kill', '999999']
             # Nonexistent PID should fail
             self.assertFalse(f.match(usercmd) or f2.match(usercmd))
-            usercmd = ['kill', p.pid]
+            usercmd = ['kill', str(p.pid)]
             # Providing no signal should work
             self.assertTrue(
                 f.match(usercmd) or f2.match(usercmd) or f3.match(usercmd)
@@ -258,10 +261,10 @@ class RootwrapTestCase(testtools.TestCase):
             f = filters.KillFilter("root", "cat")
             f2 = filters.KillFilter("root", "coreutils")
             # Our own PID does not match so it should fail
-            usercmd = ['kill', os.getpid()]
+            usercmd = ['kill', str(os.getpid())]
             self.assertFalse(f.match(usercmd))
             # Filter should find cat in /bin or /usr/bin
-            usercmd = ['kill', p.pid]
+            usercmd = ['kill', str(p.pid)]
             self.assertTrue(f.match(usercmd) or f2.match(usercmd))
             # Filter shouldn't be able to find binary in $PATH, so fail
             with fixtures.EnvironmentVariable("PATH", "/foo:/bar"):
@@ -278,7 +281,7 @@ class RootwrapTestCase(testtools.TestCase):
         """Makes sure ValueError from bug 926412 is gone."""
         f = filters.KillFilter("root", "")
         # Providing anything other than kill should be False
-        usercmd = ['notkill', 999999]
+        usercmd = ['notkill', '999999']
         self.assertFalse(f.match(usercmd))
         # Providing something that is not a pid should be False
         usercmd = ['kill', 'notapid']
@@ -291,7 +294,7 @@ class RootwrapTestCase(testtools.TestCase):
         """Makes sure deleted exe's are killed correctly."""
         command = "/bin/commandddddd"
         f = filters.KillFilter("root", command)
-        usercmd = ['kill', 1234]
+        usercmd = ['kill', '1234']
         # Providing no signal should work
         with mock.patch('os.readlink') as readlink:
             readlink.return_value = command + ' (deleted)'
@@ -309,7 +312,7 @@ class RootwrapTestCase(testtools.TestCase):
         """Makes sure upgraded exe's are killed correctly."""
         f = filters.KillFilter("root", "/bin/commandddddd")
         command = "/bin/commandddddd"
-        usercmd = ['kill', 1234]
+        usercmd = ['kill', '1234']
 
         def fake_exists(path):
             return path == command
@@ -328,7 +331,7 @@ class RootwrapTestCase(testtools.TestCase):
         """Makes sure renamed exe's are killed correctly."""
         command = "/bin/commandddddd"
         f = filters.KillFilter("root", command)
-        usercmd = ['kill', 1234]
+        usercmd = ['kill', '1234']
 
         def fake_os_func(path, *args):
             return path == command
@@ -739,11 +742,17 @@ class PathFilterTestCase(testtools.TestCase):
 
 
 class RunOneCommandTestCase(testtools.TestCase):
-    def _test_returncode_helper(self, returncode, expected):
+    def _test_returncode_helper(self, returncode: int, expected: int) -> None:
         with mock.patch.object(wrapper, 'start_subprocess') as mock_start:
             with mock.patch('sys.exit') as mock_exit:
                 mock_start.return_value.wait.return_value = returncode
-                cmd.run_one_command(None, mock.Mock(), None, None)
+                # Using mocks for testing, so ignore arg types
+                cmd.run_one_command(
+                    None,  # type: ignore[arg-type]
+                    mock.Mock(),
+                    None,  # type: ignore[arg-type]
+                    None,  # type: ignore[arg-type]
+                )
         mock_exit.assert_called_once_with(expected)
 
     def test_positive_returncode(self):

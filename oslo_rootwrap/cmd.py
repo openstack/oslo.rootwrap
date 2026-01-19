@@ -34,10 +34,14 @@ import configparser
 import logging
 import os
 import sys
+from types import ModuleType
+from typing import NoReturn
 
+from oslo_rootwrap import filters as filters_mod
 from oslo_rootwrap import subprocess
 from oslo_rootwrap import wrapper
 
+resource: ModuleType | None
 try:
     # This isn't available on all platforms (e.g. Windows).
     import resource
@@ -53,18 +57,20 @@ RC_NOEXECFOUND = 96
 SIGNAL_BASE = 128
 
 
-def _exit_error(execname, message, errorcode, log=True):
+def _exit_error(
+    execname: str, message: str, errorcode: int, log: bool = True
+) -> NoReturn:
     print(f"{execname}: {message}", file=sys.stderr)
     if log:
         LOG.error(message)
     sys.exit(errorcode)
 
 
-def daemon():
-    return main(run_daemon=True)
+def daemon() -> None:
+    main(run_daemon=True)
 
 
-def main(run_daemon=False):
+def main(run_daemon: bool = False) -> None:
     # Split arguments, require at least a command
     execname = sys.argv.pop(0)
     if run_daemon:
@@ -147,7 +153,12 @@ def main(run_daemon=False):
         run_one_command(execname, config, filters, sys.argv)
 
 
-def run_one_command(execname, config, filters, userargs):
+def run_one_command(
+    execname: str,
+    config: wrapper.RootwrapConfig,
+    filters: list[filters_mod.CommandFilter],
+    userargs: list[str],
+) -> NoReturn:
     # Execute command if it matches any of the loaded filters
     try:
         obj = wrapper.start_subprocess(
@@ -165,6 +176,7 @@ def run_one_command(execname, config, filters, userargs):
             returncode = SIGNAL_BASE - returncode
         sys.exit(returncode)
     except wrapper.FilterMatchNotExecutable as exc:
+        assert exc.match is not None  # narrow type
         msg = (
             f"Executable not found: {exc.match.exec_path} "
             f"(filter match = {exc.match.name})"

@@ -19,6 +19,7 @@ import logging.handlers
 import os
 import signal
 import sys
+from typing import Any, cast
 
 from oslo_rootwrap import filters
 from oslo_rootwrap import subprocess
@@ -38,12 +39,22 @@ class NoFilterMatched(Exception):
 class FilterMatchNotExecutable(Exception):
     """Raised when a filter matched but no executable was found."""
 
-    def __init__(self, match=None, **kwargs):
+    def __init__(
+        self, match: filters.CommandFilter | None = None, **kwargs: Any
+    ) -> None:
         self.match = match
 
 
 class RootwrapConfig:
-    def __init__(self, config):
+    filters_path: list[str]
+    exec_dirs: list[str]
+    syslog_log_facility: int
+    syslog_log_level: int
+    use_syslog: bool
+    daemon_timeout: int
+    rlimit_nofile: int
+
+    def __init__(self, config: configparser.RawConfigParser) -> None:
         # filters_path
         self.filters_path = config.get("DEFAULT", "filters_path").split(",")
 
@@ -60,24 +71,27 @@ class RootwrapConfig:
         if config.has_option("DEFAULT", "syslog_log_facility"):
             v = config.get("DEFAULT", "syslog_log_facility")
             facility_names = logging.handlers.SysLogHandler.facility_names
-            self.syslog_log_facility = getattr(
+            facility: int | None = getattr(
                 logging.handlers.SysLogHandler, v, None
             )
-            if self.syslog_log_facility is None and v in facility_names:
-                self.syslog_log_facility = facility_names.get(v)
-            if self.syslog_log_facility is None:
+            if facility is None and v in facility_names:
+                facility = facility_names.get(v)
+            if facility is None:
                 raise ValueError(f'Unexpected syslog_log_facility: {v}')
+            self.syslog_log_facility = facility
         else:
-            default_facility = logging.handlers.SysLogHandler.LOG_SYSLOG
-            self.syslog_log_facility = default_facility
+            self.syslog_log_facility = (
+                logging.handlers.SysLogHandler.LOG_SYSLOG
+            )
 
         # syslog_log_level
         if config.has_option("DEFAULT", "syslog_log_level"):
             v = config.get("DEFAULT", "syslog_log_level")
-            level = v.upper()
-            self.syslog_log_level = logging.getLevelName(level)
-            if self.syslog_log_level == f"Level {level}":
+            level_name = v.upper()
+            level: int | str = logging.getLevelName(level_name)
+            if isinstance(level, str):
                 raise ValueError(f'Unexpected syslog_log_level: {v!r}')
+            self.syslog_log_level = level
         else:
             self.syslog_log_level = logging.ERROR
 
@@ -100,7 +114,7 @@ class RootwrapConfig:
             self.rlimit_nofile = 1024
 
 
-def setup_syslog(execname, facility, level):
+def setup_syslog(execname: str, facility: int, level: int) -> None:
     try:
         handler = logging.handlers.SysLogHandler(
             address='/dev/log', facility=facility
@@ -121,7 +135,7 @@ def setup_syslog(execname, facility, level):
     rootwrap_logger.addHandler(handler)
 
 
-def build_filter(class_name, *args):
+def build_filter(class_name: str, *args: Any) -> filters.CommandFilter | None:
     """Returns a filter object of class class_name."""
     if not hasattr(filters, class_name):
         LOG.warning(
@@ -131,10 +145,10 @@ def build_filter(class_name, *args):
         )
         return None
     filterclass = getattr(filters, class_name)
-    return filterclass(*args)
+    return cast(filters.CommandFilter, filterclass(*args))
 
 
-def load_filters(filters_path):
+def load_filters(filters_path: list[str]) -> list[filters.CommandFilter]:
     """Load filters from a list of directories."""
     filterlist = []
     for filterdir in filters_path:
@@ -146,8 +160,7 @@ def load_filters(filters_path):
             filterfilepath = os.path.join(filterdir, filterfile)
             if not os.path.isfile(filterfilepath):
                 continue
-            kwargs = {"strict": False}
-            filterconfig = configparser.RawConfigParser(**kwargs)
+            filterconfig = configparser.RawConfigParser(strict=False)
             filterconfig.read(filterfilepath)
             for name, value in filterconfig.items("Filters"):
                 filterdefinition = [s.strip() for s in value.split(',')]
@@ -158,12 +171,17 @@ def load_filters(filters_path):
                 filterlist.append(newfilter)
     # And always include privsep-helper
     privsep = build_filter("CommandFilter", "privsep-helper", "root")
+    assert privsep is not None  # narrow type
     privsep.name = "privsep-helper"
     filterlist.append(privsep)
     return filterlist
 
 
-def match_filter(filter_list, userargs, exec_dirs=None):
+def match_filter(
+    filter_list: list[filters.CommandFilter],
+    userargs: list[str],
+    exec_dirs: list[str] | None = None,
+) -> filters.CommandFilter:
     """Checks user command and arguments through command filters.
 
     Returns the first matching filter.
@@ -180,7 +198,7 @@ def match_filter(filter_list, userargs, exec_dirs=None):
             if isinstance(f, filters.ChainingFilter):
                 # This command calls exec verify that remaining args
                 # matches another filter.
-                def non_chain_filter(fltr):
+                def non_chain_filter(fltr: filters.CommandFilter) -> bool:
                     return fltr.run_as == f.run_as and not isinstance(
                         fltr, filters.ChainingFilter
                     )
@@ -212,7 +230,7 @@ def match_filter(filter_list, userargs, exec_dirs=None):
     raise NoFilterMatched()
 
 
-def _getlogin():
+def _getlogin() -> str | None:
     try:
         return os.getlogin()
     except OSError:
@@ -221,10 +239,16 @@ def _getlogin():
         )
 
 
-def start_subprocess(filter_list, userargs, exec_dirs=[], log=False, **kwargs):
-    filtermatch = match_filter(filter_list, userargs, exec_dirs)
+def start_subprocess(
+    filter_list: list[filters.CommandFilter],
+    userargs: list[str],
+    exec_dirs: list[str] | None = None,
+    log: bool = False,
+    **kwargs: Any,
+) -> subprocess.Popen[bytes]:
+    filtermatch = match_filter(filter_list, userargs, exec_dirs or [])
 
-    command = filtermatch.get_command(userargs, exec_dirs)
+    command = filtermatch.get_command(userargs, exec_dirs or [])
     if log:
         LOG.info(
             "(%s > %s) Executing %s (filter match = %s)",
@@ -234,7 +258,7 @@ def start_subprocess(filter_list, userargs, exec_dirs=[], log=False, **kwargs):
             filtermatch.name,
         )
 
-    def preexec():
+    def preexec() -> None:
         # Python installs a SIGPIPE handler by default. This is
         # usually not what non-Python subprocesses expect.
         signal.signal(signal.SIGPIPE, signal.SIG_DFL)
