@@ -19,7 +19,7 @@ import logging.handlers
 import os
 import signal
 import sys
-from typing import Any, cast
+from typing import Any
 
 from oslo_rootwrap import filters
 from oslo_rootwrap import subprocess
@@ -137,15 +137,34 @@ def setup_syslog(execname: str, facility: int, level: int) -> None:
 
 def build_filter(class_name: str, *args: Any) -> filters.CommandFilter | None:
     """Returns a filter object of class class_name."""
-    if not hasattr(filters, class_name):
-        LOG.warning(
-            "Skipping unknown filter class (%s) specified "
-            "in filter definitions",
-            class_name,
-        )
-        return None
-    filterclass = getattr(filters, class_name)
-    return cast(filters.CommandFilter, filterclass(*args))
+    match class_name:
+        case "CommandFilter":
+            return filters.CommandFilter(*args)
+        case "RegExpFilter":
+            return filters.RegExpFilter(*args)
+        case "PathFilter":
+            return filters.PathFilter(*args)
+        case "KillFilter":
+            return filters.KillFilter(*args)
+        case "ReadFileFilter":
+            return filters.ReadFileFilter(*args)
+        case "IpFilter":
+            return filters.IpFilter(*args)
+        case "EnvFilter":
+            return filters.EnvFilter(*args)
+        case "ChainingFilter":
+            return filters.ChainingFilter(*args)
+        case "IpNetnsExecFilter":
+            return filters.IpNetnsExecFilter(*args)
+        case "ChainingRegExpFilter":
+            return filters.ChainingRegExpFilter(*args)
+        case _:
+            LOG.warning(
+                "Skipping unknown filter class (%s) specified "
+                "in filter definitions",
+                class_name,
+            )
+            return None
 
 
 def load_filters(filters_path: list[str]) -> list[filters.CommandFilter]:
