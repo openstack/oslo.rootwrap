@@ -158,14 +158,9 @@ def daemon_start(config, filters):
                 | stat.S_IWOTH
             )
             os.chmod(socket_path, rw_rw_rw_)
-            try:
-                # In Python 3 we have to use buffer to push in bytes directly
-                stdout = sys.stdout.buffer
-            except AttributeError:
-                stdout = sys.stdout
-            stdout.write(socket_path.encode('utf-8'))
-            stdout.write(b'\n')
-            stdout.write(bytes(server.authkey))
+            sys.stdout.buffer.write(socket_path.encode('utf-8'))
+            sys.stdout.buffer.write(b'\n')
+            sys.stdout.buffer.write(bytes(server.authkey))
             sys.stdin.close()
             sys.stdout.close()
             sys.stderr.close()
@@ -206,7 +201,4 @@ def daemon_stop(server, signal, frame):
     # properly return. Since all threads created by server_forever are
     # daemonic, we need to join them afterwards. In Python 3 we can just hit
     # stop_event instead.
-    try:
-        server.stop_event.set()
-    except AttributeError:
-        raise KeyboardInterrupt
+    server.stop_event.set()

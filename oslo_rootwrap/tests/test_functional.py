@@ -284,7 +284,7 @@ class RootwrapDaemonTest(_FunctionalBase, testtools.TestCase):
     def _test_daemon_cleanup(self):
         # Start a daemon
         self.execute(['cat'])
-        socket_path = self.client._manager._address
+        socket_path = self.client._manager.address
         # Stop it one way or another
         yield
         process = self.client._process

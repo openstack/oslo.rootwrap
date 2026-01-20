@@ -15,7 +15,6 @@
 
 import logging
 from multiprocessing import managers
-from multiprocessing import util as mp_util
 import threading
 import time
 import weakref
@@ -32,15 +31,6 @@ if oslo_rootwrap._patched_socket:
     # This check happens here instead of jsonrpc to avoid importing eventlet
     # from daemon code that is run with root privileges.
     jsonrpc.JsonConnection.recvall = jsonrpc.JsonConnection._recvall_slow
-
-try:
-    finalize = weakref.finalize
-except AttributeError:
-
-    def finalize(obj, func, *args, **kwargs):
-        return mp_util.Finalize(
-            obj, func, args=args, kwargs=kwargs, exitpriority=0
-        )
 
 
 ClientManager = daemon.get_manager_class()
@@ -83,10 +73,7 @@ class Client:
         )
 
         self._process = process_obj
-        socket_path = process_obj.stdout.readline()[:-1]
-        # For Python 3 we need to convert bytes to str here
-        if not isinstance(socket_path, str):
-            socket_path = socket_path.decode('utf-8')
+        socket_path = process_obj.stdout.readline()[:-1].decode('utf-8')
         authkey = process_obj.stdout.read(32)
         if process_obj.poll() is not None:
             stderr = process_obj.stderr.read()
@@ -110,7 +97,7 @@ class Client:
         self._manager = ClientManager(socket_path, authkey)
         self._manager.connect()
         self._proxy = self._manager.rootwrap()
-        self._finalize = finalize(
+        self._finalize = weakref.finalize(
             self, self._shutdown, self._process, self._manager
         )
         self._initialized = True

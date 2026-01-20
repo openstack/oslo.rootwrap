@@ -185,28 +185,6 @@ class KillFilter(CommandFilter):
     def __init__(self, *args):
         super().__init__("/bin/kill", *args)
 
-    @staticmethod
-    def _program_path(command):
-        """Try to determine the full path for command.
-
-        Return command if the full path cannot be found.
-        """
-
-        # shutil.which() was added to Python 3.3
-        if hasattr(shutil, 'which'):
-            return shutil.which(command)
-
-        if os.path.isabs(command):
-            return command
-
-        path = os.environ.get('PATH', os.defpath).split(os.pathsep)
-        for dir in path:
-            program = os.path.join(dir, command)
-            if os.path.isfile(program):
-                return program
-
-        return command
-
     def _program(self, pid):
         """Determine the program associated with pid"""
 
@@ -236,7 +214,7 @@ class KillFilter(CommandFilter):
             with open(f"/proc/{int(pid)}/cmdline") as pfile:
                 cmdline = pfile.read().partition('\0')[0]
 
-            cmdline = self._program_path(cmdline)
+            cmdline = shutil.which(cmdline)
             if os.path.isfile(cmdline):
                 command = cmdline
 
