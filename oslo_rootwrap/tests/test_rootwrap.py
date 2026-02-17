@@ -16,6 +16,7 @@ import configparser
 import logging
 import logging.handlers
 import os
+import shutil
 import tempfile
 from unittest import mock
 import uuid
@@ -220,64 +221,63 @@ class RootwrapTestCase(testtools.TestCase):
     def test_KillFilter(self):
         if not os.path.exists(f"/proc/{os.getpid()}"):
             self.skipTest("Test requires /proc filesystem (procfs)")
+
+        cat_cmd = "cat"
+        cat_path = shutil.which(cat_cmd)
+        if cat_path is None:
+            self.skipTest("Test requires cat command")
+
+        assert cat_path is not None
+        # NOTE(tkajinam): In RHEL9 containers the cat command is a symlink
+        #                 See bug 2037383 for details.
+        if os.path.islink(cat_path):
+            cat_path = os.path.realpath(cat_path)
+            cat_cmd = os.path.basename(cat_path)
+
         p = subprocess.Popen(
             ["cat"],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
+
         try:
-            filter_list = [
-                filters.KillFilter("root", cmd, "-9", "-HUP")
-                for cmd in ("/bin/cat", "/usr/bin/cat", "/usr/bin/coreutils")
-            ]
+            f = filters.KillFilter("root", cat_path, "-9", "-HUP")
             usercmd = ['kill', '-ALRM', str(p.pid)]
             # Incorrect signal should fail
-            for f in filter_list:
-                self.assertFalse(f.match(usercmd))
+            self.assertFalse(f.match(usercmd))
             usercmd = ['kill', str(p.pid)]
             # Providing no signal should fail
-            for f in filter_list:
-                self.assertFalse(f.match(usercmd))
+            self.assertFalse(f.match(usercmd))
             # Providing matching signal should be allowed
             usercmd = ['kill', '-9', str(p.pid)]
-            self.assertTrue(any([f.match(usercmd) for f in filter_list]))
+            self.assertTrue(f.match(usercmd))
 
-            filter_list = [
-                filters.KillFilter("root", cmd)
-                for cmd in ("/bin/cat", "/usr/bin/cat", "/usr/bin/coreutils")
-            ]
+            f = filters.KillFilter("root", cat_path)
             usercmd = ['kill', str(os.getpid())]
             # Our own PID does not match /bin/sleep, so it should fail
-            for f in filter_list:
-                self.assertFalse(f.match(usercmd))
+            self.assertFalse(f.match(usercmd))
             usercmd = ['kill', '999999']
             # Nonexistent PID should fail
-            for f in filter_list:
-                self.assertFalse(f.match(usercmd))
+            self.assertFalse(f.match(usercmd))
             usercmd = ['kill', str(p.pid)]
             # Providing no signal should work
-            self.assertTrue(any([f.match(usercmd) for f in filter_list]))
+            self.assertTrue(f.match(usercmd))
 
             # verify that relative paths are matched against $PATH
-            filter_list = [
-                filters.KillFilter("root", cmd) for cmd in ("cat", "coreutils")
-            ]
+            f = filters.KillFilter("root", cat_cmd)
             # Our own PID does not match so it should fail
             usercmd = ['kill', str(os.getpid())]
-            for f in filter_list:
-                self.assertFalse(f.match(usercmd))
+            self.assertFalse(f.match(usercmd))
             # Filter should find cat in /bin or /usr/bin
             usercmd = ['kill', str(p.pid)]
-            self.assertTrue(any([f.match(usercmd) for f in filter_list]))
+            self.assertTrue(f.match(usercmd))
             # Filter shouldn't be able to find binary in $PATH, so fail
             with fixtures.EnvironmentVariable("PATH", "/foo:/bar"):
-                for f in filter_list:
-                    self.assertFalse(f.match(usercmd))
+                self.assertFalse(f.match(usercmd))
             # ensure that unset $PATH is not causing an exception
             with fixtures.EnvironmentVariable("PATH"):
-                for f in filter_list:
-                    self.assertFalse(f.match(usercmd))
+                self.assertFalse(f.match(usercmd))
         finally:
             # Terminate the "cat" process and wait for it to finish
             p.terminate()
