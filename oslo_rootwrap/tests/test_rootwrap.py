@@ -227,51 +227,57 @@ class RootwrapTestCase(testtools.TestCase):
             stderr=subprocess.STDOUT,
         )
         try:
-            f = filters.KillFilter("root", "/bin/cat", "-9", "-HUP")
-            f2 = filters.KillFilter("root", "/usr/bin/cat", "-9", "-HUP")
-            f3 = filters.KillFilter("root", "/usr/bin/coreutils", "-9", "-HUP")
+            filter_list = [
+                filters.KillFilter("root", cmd, "-9", "-HUP")
+                for cmd in ("/bin/cat", "/usr/bin/cat", "/usr/bin/coreutils")
+            ]
             usercmd = ['kill', '-ALRM', str(p.pid)]
             # Incorrect signal should fail
-            self.assertFalse(f.match(usercmd) or f2.match(usercmd))
+            for f in filter_list:
+                self.assertFalse(f.match(usercmd))
             usercmd = ['kill', str(p.pid)]
             # Providing no signal should fail
-            self.assertFalse(f.match(usercmd) or f2.match(usercmd))
+            for f in filter_list:
+                self.assertFalse(f.match(usercmd))
             # Providing matching signal should be allowed
             usercmd = ['kill', '-9', str(p.pid)]
-            self.assertTrue(
-                f.match(usercmd) or f2.match(usercmd) or f3.match(usercmd)
-            )
+            self.assertTrue(any([f.match(usercmd) for f in filter_list]))
 
-            f = filters.KillFilter("root", "/bin/cat")
-            f2 = filters.KillFilter("root", "/usr/bin/cat")
-            f3 = filters.KillFilter("root", "/usr/bin/coreutils")
+            filter_list = [
+                filters.KillFilter("root", cmd)
+                for cmd in ("/bin/cat", "/usr/bin/cat", "/usr/bin/coreutils")
+            ]
             usercmd = ['kill', str(os.getpid())]
             # Our own PID does not match /bin/sleep, so it should fail
-            self.assertFalse(f.match(usercmd) or f2.match(usercmd))
+            for f in filter_list:
+                self.assertFalse(f.match(usercmd))
             usercmd = ['kill', '999999']
             # Nonexistent PID should fail
-            self.assertFalse(f.match(usercmd) or f2.match(usercmd))
+            for f in filter_list:
+                self.assertFalse(f.match(usercmd))
             usercmd = ['kill', str(p.pid)]
             # Providing no signal should work
-            self.assertTrue(
-                f.match(usercmd) or f2.match(usercmd) or f3.match(usercmd)
-            )
+            self.assertTrue(any([f.match(usercmd) for f in filter_list]))
 
             # verify that relative paths are matched against $PATH
-            f = filters.KillFilter("root", "cat")
-            f2 = filters.KillFilter("root", "coreutils")
+            filter_list = [
+                filters.KillFilter("root", cmd) for cmd in ("cat", "coreutils")
+            ]
             # Our own PID does not match so it should fail
             usercmd = ['kill', str(os.getpid())]
-            self.assertFalse(f.match(usercmd))
+            for f in filter_list:
+                self.assertFalse(f.match(usercmd))
             # Filter should find cat in /bin or /usr/bin
             usercmd = ['kill', str(p.pid)]
-            self.assertTrue(f.match(usercmd) or f2.match(usercmd))
+            self.assertTrue(any([f.match(usercmd) for f in filter_list]))
             # Filter shouldn't be able to find binary in $PATH, so fail
             with fixtures.EnvironmentVariable("PATH", "/foo:/bar"):
-                self.assertFalse(f.match(usercmd))
+                for f in filter_list:
+                    self.assertFalse(f.match(usercmd))
             # ensure that unset $PATH is not causing an exception
             with fixtures.EnvironmentVariable("PATH"):
-                self.assertFalse(f.match(usercmd))
+                for f in filter_list:
+                    self.assertFalse(f.match(usercmd))
         finally:
             # Terminate the "cat" process and wait for it to finish
             p.terminate()
