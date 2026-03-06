@@ -31,6 +31,7 @@ except ImportError:
 
 import fixtures
 from testtools import content
+from testtools import content_type
 
 from oslo_rootwrap import client
 from oslo_rootwrap import cmd
@@ -111,13 +112,13 @@ class RootwrapDaemonTest(functional_base._FunctionalBase):
             self.addDetail(
                 'daemon_log',
                 content.Content(
-                    content.UTF8_TEXT, lambda: [daemon_log.getvalue()]
+                    content_type.UTF8_TEXT, lambda: [daemon_log.getvalue()]
                 ),
             )
             self.addDetail(
                 'client_log',
                 content.Content(
-                    content.UTF8_TEXT,
+                    content_type.UTF8_TEXT,
                     lambda: [client_log.getvalue().encode('utf-8')],
                 ),
             )
@@ -134,7 +135,8 @@ class RootwrapDaemonTest(functional_base._FunctionalBase):
                 assert self.client._finalize is not None  # narrow type
                 self.client._finalize()
 
-        self.execute = self.client.execute
+    def execute(self, cmd, stdin=None):
+        return self.client.execute(cmd, stdin=stdin)
 
     def test_run_once(self):
         self._test_run_once(expect_byte=False)
