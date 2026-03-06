@@ -51,6 +51,8 @@ unknown_cmd: CommandFilter, /unknown/unknown_cmd, root
 later_install_cmd: CommandFilter, {self.later_cmd}, root
 """)
 
+    def execute(self, cmd, stdin=None): ...
+
     def _test_run_once(self, expect_byte: bool = True) -> None:
         code, out, err = self.execute(['echo', 'teststr'])
         self.assertEqual(0, code)
@@ -97,7 +99,7 @@ later_install_cmd: CommandFilter, {self.later_cmd}, root
 
     def test_run_as(self):
         if os.getuid() != 0:
-            self.skip('Test requires root (for setuid)')
+            self.skipTest('Test requires root (for setuid)')
 
         # Should run as 'nobody'
         code, out, err = self.execute(['id', '-u'])
