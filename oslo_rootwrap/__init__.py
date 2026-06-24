@@ -14,6 +14,7 @@
 #    under the License.
 
 import os
+import sys
 
 import debtcollector
 
@@ -21,11 +22,11 @@ __all__ = [
     'subprocess',
 ]
 
-try:
+_patched_socket = False
+
+if 'eventlet' in sys.modules:
     import eventlet.patcher
-except ImportError:
-    _patched_socket = False
-else:
+
     # In tests patching happens later, so we'll rely on environment variable
     _patched_socket = eventlet.patcher.is_monkey_patched('socket') or bool(
         os.environ.get('TEST_EVENTLET', False)

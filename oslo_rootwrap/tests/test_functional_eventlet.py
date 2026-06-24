@@ -20,6 +20,13 @@ if os.environ.get('TEST_EVENTLET', False):
 
     eventlet.monkey_patch()
 
+    import oslo_rootwrap
+
+    oslo_rootwrap._patched_socket = True
+    from eventlet.green import subprocess
+
+    oslo_rootwrap.subprocess = subprocess
+
     from oslo_rootwrap.tests import test_functional
 
     class RootwrapDaemonTest(test_functional.RootwrapDaemonTest):
