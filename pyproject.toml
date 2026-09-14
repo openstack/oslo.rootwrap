@@ -37,7 +37,7 @@ oslo-rootwrap = "oslo_rootwrap.cmd:main"
 oslo-rootwrap-daemon = "oslo_rootwrap.cmd:daemon"
 
 [tool.setuptools.packages.find]
-include = ["oslo_rootwrap"]
+include = ["oslo_rootwrap*"]
 
 [tool.mypy]
 python_version = "3.11"
