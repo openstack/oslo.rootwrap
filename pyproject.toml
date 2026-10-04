@@ -40,6 +40,19 @@ oslo-rootwrap-daemon = "oslo_rootwrap.cmd:daemon"
 [tool.setuptools.packages.find]
 include = ["oslo_rootwrap*"]
 
+[tool.coverage.run]
+source = [
+    "oslo_rootwrap"
+]
+branch = true
+omit = [
+    "oslo_rootwrap/tests/*"
+]
+
+[tool.coverage.report]
+ignore_errors = true
+show_missing = true
+
 [tool.mypy]
 python_version = "3.11"
 show_column_numbers = true
