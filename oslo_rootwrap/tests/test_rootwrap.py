@@ -228,11 +228,12 @@ class RootwrapTestCase(testtools.TestCase):
             self.skipTest("Test requires cat command")
 
         assert cat_path is not None
-        # NOTE(tkajinam): In RHEL9 containers the cat command is a symlink
-        #                 See bug 2037383 for details.
-        if os.path.islink(cat_path):
-            cat_path = os.path.realpath(cat_path)
-            cat_cmd = os.path.basename(cat_path)
+        # Resolve the executable path because /proc/<pid>/exe reports the
+        # kernel-resolved path.
+        # This also handles symlinks to multi-call binaries such as in
+        # rust-coreutils.
+        cat_path = os.path.realpath(cat_path)
+        cat_cmd = os.path.basename(cat_path)
 
         p = subprocess.Popen(
             ["cat"],
@@ -269,9 +270,14 @@ class RootwrapTestCase(testtools.TestCase):
             # Our own PID does not match so it should fail
             usercmd = ['kill', str(os.getpid())]
             self.assertFalse(f.match(usercmd))
-            # Filter should find cat in /bin or /usr/bin
+            # Filter should find the executable in $PATH.
+            # The command can be a symlink to a multi-call binary outside the
+            # directory of the command, so use the resolved executable dir.
             usercmd = ['kill', str(p.pid)]
-            self.assertTrue(f.match(usercmd))
+            with fixtures.EnvironmentVariable(
+                "PATH", os.path.dirname(cat_path)
+            ):
+                self.assertTrue(f.match(usercmd))
             # Filter shouldn't be able to find binary in $PATH, so fail
             with fixtures.EnvironmentVariable("PATH", "/foo:/bar"):
                 self.assertFalse(f.match(usercmd))
